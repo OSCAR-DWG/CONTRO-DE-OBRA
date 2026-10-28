@@ -1,0 +1,2583 @@
+<!-- ... existing code ... -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Obra - Losa Aligerada 2do Piso</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .tab-active {
+      border-bottom: 3px solid #f97316;
+      color: #ea580c;
+      font-weight: 700;
+    }
+    /* Asegurar que modales ocultos no bloqueen clics bajo ninguna circunstancia */
+    .modal-hidden {
+      display: none !important;
+      pointer-events: none !important;
+    }
+    .modal-visible {
+      display: flex !important;
+      pointer-events: auto !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased relative min-h-screen">
+
+  <!-- BANNER NOTIFICACIÓN DE PARALIZACIÓN ACTIVA -->
+  <div id="banner-paralizacion-activa" class="hidden bg-rose-700 text-white text-xs font-bold py-2.5 px-4 text-center shadow-inner transition-all z-30 relative"></div>
+
+  <!-- TOPBAR -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <i data-lucide="hard-hat" class="w-8 h-8 text-amber-500"></i>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">OBRA: TECHO ALIGERADO 2° PISO</h1>
+          <p class="text-xs text-slate-400">Área: 63 m² | Vigas Peraltadas: 30 ml | Escalera: 1 und</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- SELECTOR / ESTADO DE AUTENTICACIÓN (ADMIN vs VISITANTE) -->
+        <div id="auth-status-container" class="flex items-center gap-2">
+          <!-- Renderizado dinámico -->
+        </div>
+
+        <span id="header-estado-obra-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span> Obra en Ejecución
+        </span>
+        <button onclick="resetData()" title="Reiniciar datos de obra" class="admin-only text-xs text-slate-400 hover:text-rose-400 p-1.5 transition-colors rounded">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="max-w-7xl mx-auto px-4 flex space-x-6 text-sm overflow-x-auto border-t border-slate-800">
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-3 px-1 tab-active flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Panel General
+      </button>
+      <button onclick="switchTab('compras')" id="tab-compras" class="py-3 px-1 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+        <i data-lucide="boxes" class="w-4 h-4"></i> Materiales
+      </button>
+      <button onclick="switchTab('avance')" id="tab-avance" class="py-3 px-1 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+        <i data-lucide="calendar-check" class="w-4 h-4"></i> Avance de Obra
+      </button>
+      <button onclick="switchTab('mano-obra')" id="tab-mano-obra" class="py-3 px-1 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+        <i data-lucide="users" class="w-4 h-4"></i> Mano de Obra
+      </button>
+      <button onclick="switchTab('finanzas')" id="tab-finanzas" class="py-3 px-1 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+        <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i> Transferencias
+      </button>
+    </nav>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-4 py-6 relative z-10">
+
+    <!-- ==================== SECCIÓN 1: PANEL GENERAL ==================== -->
+    <section id="sec-dashboard" class="space-y-6">
+
+      <!-- 1. ALERTAS LOGÍSTICAS (PRIMERO: SOLO CRÍTICO Y PENDIENTE) -->
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm">
+        <div class="flex items-start">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 mr-3 mt-0.5 flex-shrink-0"></i>
+          <div class="w-full">
+            <h4 class="text-sm font-bold text-amber-900 tracking-wide uppercase">ALERTAS LOGÍSTICAS</h4>
+            <div class="mt-2.5 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div class="bg-white p-3 rounded-lg border border-rose-200 shadow-2xs">
+                <span class="font-bold text-rose-600 flex items-center gap-1.5 text-xs">
+                  <i data-lucide="alert-octagon" class="w-4 h-4"></i> CRÍTICO: Mixer 15 m³ + Bomba
+                </span>
+                <span class="text-slate-600 block mt-1">Monto: S/ 5,775.00. Programar con 48h de antelación al vaciado de techo.</span>
+              </div>
+              <div class="bg-white p-3 rounded-lg border border-amber-200 shadow-2xs">
+                <span class="font-bold text-amber-700 flex items-center gap-1.5 text-xs">
+                  <i data-lucide="clock" class="w-4 h-4"></i> PENDIENTE: Tuberías Eléctricas
+                </span>
+                <span class="text-slate-600 block mt-1">20 tubos de luz + 20 cajas octogonales (S/ 140.00). Instalar antes del emparrillado.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. BALANCE GENERAL DE CAJA CON VALOR TOTAL DE OBRA Y GASTO HASTA AHORA -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-2 bg-rose-600 text-white rounded-xl shadow p-5 flex flex-col justify-between">
+          <div class="flex flex-wrap items-center justify-between border-b border-rose-500 pb-2 mb-3 gap-2">
+            <span class="text-xs uppercase font-semibold text-rose-200 tracking-wider">BALANCE GENERAL DE CAJA</span>
+            <div class="flex items-center gap-2 bg-rose-900/90 px-3 py-1.5 rounded-lg border border-rose-400/40 shadow-xs">
+              <span class="text-xs uppercase font-bold text-rose-200">VALOR TOTAL OBRA:</span>
+              <strong id="dash-balance-valor-total" class="font-mono text-white text-base md:text-lg font-black tracking-tight">S/ 21,111.40</strong>
+            </div>
+          </div>
+
+          <!-- MATRIZ DE CAJA Y LIQUIDACIÓN -->
+          <div class="grid grid-cols-3 text-center divide-x divide-rose-500/80">
+            <div>
+              <div class="text-xs uppercase font-semibold text-rose-200">DEPÓSITO</div>
+              <div class="text-xl md:text-2xl font-black mt-1" id="dash-deposito">S/ 11,560.00</div>
+              <div class="text-[11px] text-rose-200 mt-0.5">$3,400.00 USD recibidos</div>
+            </div>
+            <div>
+              <div class="text-xs uppercase font-semibold text-rose-200">GASTO HASTA AHORA</div>
+              <div class="text-xl md:text-2xl font-black mt-1" id="dash-gasto">S/ 11,858.40</div>
+              <div class="text-[11px] text-rose-200 mt-0.5" id="dash-gasto-sub-info">Compras + Albañiles</div>
+            </div>
+            <div>
+              <div class="text-xs uppercase font-semibold text-rose-200">RESTA</div>
+              <div class="text-xl md:text-2xl font-black mt-1" id="dash-resta">-S/ 298.40</div>
+              <div class="text-[11px] text-yellow-300 font-bold mt-0.5" id="dash-resta-label">Dinero puesto por ti (a devolver)</div>
+            </div>
+          </div>
+
+          <!-- RESUMEN EN LÍNEA: VALOR TOTAL VS LO GASTADO HASTA AHORA -->
+          <div class="mt-4 pt-3 border-t border-rose-500/80 flex flex-wrap items-center justify-between gap-2.5">
+            <span class="text-xs md:text-sm text-rose-100">
+              Ejecución presupuestal: <strong id="dash-balance-pct-ejecutado" class="font-black text-white text-sm md:text-base">56.2%</strong> del costo total
+            </span>
+            <div class="bg-rose-950/90 border border-yellow-300/40 px-3.5 py-1.5 rounded-lg shadow-sm">
+              <span class="text-xs font-bold text-rose-200 mr-1.5 uppercase tracking-wide">FALTA INVERTIR EN OBRA:</span>
+              <strong class="font-mono text-sm md:text-base text-yellow-300 font-black tracking-tight" id="dash-balance-falta-invertir">S/ 9,253.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5 border border-slate-200 flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase">Avance de Obra Actual</p>
+              <div class="flex items-baseline gap-2 mt-1">
+                <h3 class="text-2xl md:text-3xl font-black text-slate-800" id="dash-resumen-dias-ejecutados">16 Jornadas</h3>
+                <span class="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full" id="dash-resumen-dias-pct">56.2%</span>
+              </div>
+            </div>
+            <span class="p-2.5 rounded-lg bg-amber-100 text-amber-700">
+              <i data-lucide="hammer" class="w-6 h-6"></i>
+            </span>
+          </div>
+
+          <!-- SUB-PESTAÑA / TARJETA RESUMEN DEL ÚLTIMO DÍA REGISTRADO -->
+          <div class="mt-3 p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+            <div class="flex items-center justify-between pb-1 border-b border-slate-200">
+              <span class="text-[10px] font-bold text-amber-800 uppercase flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3 text-amber-600"></i> Último Avance Registrado
+              </span>
+              <span class="text-[10px] font-bold text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200" id="dash-ultimo-dia-fecha">-</span>
+            </div>
+            <p class="text-[11px] text-slate-700 mt-1 leading-snug line-clamp-2" id="dash-ultimo-dia-texto">Cargando último reporte...</p>
+          </div>
+
+          <div class="mt-3">
+            <div class="flex justify-between text-xs text-slate-600 mb-1">
+              <span>Semana activa: Según calendario</span>
+              <span id="badge-total-jornadas" class="font-bold">16 Días (56.2%)</span>
+            </div>
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div id="dash-barra-avance-dias" class="bg-amber-500 h-2.5 rounded-full transition-all" style="width: 56.2%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. RESUMEN MAESTRO INTEGRAL: COSTO TOTAL DE LA OBRA (MATERIALES + MANO DE OBRA) -->
+      <div class="bg-white rounded-xl border border-slate-300 shadow-sm p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div class="flex items-center gap-3">
+            <span class="p-2.5 bg-slate-900 text-amber-400 rounded-xl shadow-xs">
+              <i data-lucide="calculator" class="w-6 h-6"></i>
+            </span>
+            <div>
+              <h3 class="text-sm md:text-base font-black text-slate-900 uppercase tracking-tight">
+                Costo Total Presupuestado de la Obra (Materiales + Mano de Obra)
+              </h3>
+              <p class="text-xs text-slate-500">
+                Consolidado maestro de inversión total, ejecución acumulada y saldo pendiente para culminar la losa aligerada.
+              </p>
+            </div>
+          </div>
+          <div class="text-right bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl">
+            <span class="text-[10px] font-bold text-slate-500 uppercase block tracking-wider">PRESUPUESTO TOTAL OBRA</span>
+            <span class="text-xl md:text-2xl font-black text-slate-900 font-mono" id="dash-gran-total-presupuesto">S/ 21,111.40</span>
+          </div>
+        </div>
+
+        <!-- MATRIZ DETALLADA DE 3 COLUMNAS: TOTAL OBRA | MATERIALES | MANO DE OBRA -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+
+          <!-- TARJETA B: APARTADO MATERIALES -->
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+                <span class="font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                  <i data-lucide="boxes" class="w-4 h-4 text-orange-500"></i> Insumos y Materiales
+                </span>
+                <span class="text-[10px] bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded" id="dash-mat-pct-badge">56.2% Comprado</span>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-600 font-medium">Cotización Total Materiales:</span>
+                  <span class="font-mono font-bold text-slate-900" id="dash-mat-total-num">S/ 13,621.40</span>
+                </div>
+                <div class="flex justify-between items-center text-emerald-700">
+                  <span class="font-medium">Materiales ya Comprados:</span>
+                  <span class="font-mono font-black" id="dash-mat-gastado-num">S/ 7,658.40</span>
+                </div>
+                <div class="flex justify-between items-center text-rose-700 border-t border-slate-200/80 pt-1.5">
+                  <span class="font-medium">Materiales que Faltan Comprar:</span>
+                  <span class="font-mono font-black" id="dash-mat-falta-num">S/ 5,963.00</span>
+                </div>
+                <p class="text-[10px] text-slate-500 pt-1 italic">
+                  * Faltan: Mixer (15 m³) + Bomba (S/ 5,775), Eléctricas (S/ 140) y saldo de alambre (S/ 30).
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-2.5 border-t border-slate-200">
+              <div class="flex justify-between text-[11px] text-slate-600 mb-1">
+                <span>Comprado:</span>
+                <span class="font-mono font-bold text-slate-800" id="dash-mat-progress-text">56.2%</span>
+              </div>
+              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                <div id="dash-mat-bar-comprado" class="bg-orange-500 h-2 transition-all" style="width: 56.2%"></div>
+                <div id="dash-mat-bar-falta" class="bg-rose-400 h-2 transition-all" style="width: 43.8%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TARJETA C: APARTADO MANO DE OBRA -->
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+                <span class="font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                  <i data-lucide="users" class="w-4 h-4 text-blue-600"></i> Mano de Obra (Albañiles)
+                </span>
+                <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded" id="dash-mo-pct-badge">56.1% Liquidado</span>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-600 font-medium">Contrato Neto de Mano de Obra:</span>
+                  <span class="font-mono font-bold text-slate-900" id="dash-mo-total-num">S/ 7,490.00</span>
+                </div>
+                <div class="flex justify-between items-center text-blue-700">
+                  <span class="font-medium">Pagado a Cuadrilla a la Fecha:</span>
+                  <span class="font-mono font-black" id="dash-mo-gastado-num">S/ 4,200.00</span>
+                </div>
+                <div class="flex justify-between items-center text-amber-700 border-t border-slate-200/80 pt-1.5">
+                  <span class="font-medium">Saldo que Falta por Pagar:</span>
+                  <span class="font-mono font-black" id="dash-mo-falta-num">S/ 3,290.00</span>
+                </div>
+                <p class="text-[10px] text-slate-500 pt-1 italic">
+                  * Techo 63 m² + Vigas 30 ml + Escalera, con S/ 1,000 descontados de lateros derivados al mixer.
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-2.5 border-t border-slate-200">
+              <div class="flex justify-between text-[11px] text-slate-600 mb-1">
+                <span>Pagado a Cuadrilla:</span>
+                <span class="font-mono font-bold text-slate-800" id="dash-mo-progress-text">56.1%</span>
+              </div>
+              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                <div id="dash-mo-bar-pagado" class="bg-blue-600 h-2 transition-all" style="width: 56.1%"></div>
+                <div id="dash-mo-bar-falta" class="bg-amber-400 h-2 transition-all" style="width: 43.9%"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECCIÓN 2: COMPRAS CON FORMATO EXCEL ==================== -->
+    <section id="sec-compras" class="hidden space-y-4">
+      <div class="bg-amber-300 border-2 border-amber-400 p-3 rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="table" class="w-5 h-5 text-amber-950"></i>
+          <span class="font-black text-amber-950 text-base uppercase tracking-wide">MATERIALES TOTALES (PRESUPUESTO BASE)</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-right mr-2">
+            <span class="text-xs text-amber-900 font-bold block">COSTO TOTAL</span>
+            <span class="text-xl font-black text-amber-950 font-mono" id="comp-total-general">13621,4</span>
+          </div>
+          <button onclick="openModalRegistroCompra()" class="admin-only px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow cursor-pointer">
+            <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> + Registrar Compra
+          </button>
+          <button onclick="openModalGestionMateriales()" class="admin-only px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow cursor-pointer">
+            <i data-lucide="boxes" class="w-3.5 h-3.5"></i> Gestionar / + Nuevo Material
+          </button>
+        </div>
+      </div>
+
+      <!-- SELECTOR DE VISTA -->
+      <div class="flex flex-wrap gap-2" id="contenedor-filtros-vistas">
+        <button onclick="setModoTabla('presupuesto')" id="btn-vista-presupuesto" class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Lista Maestra / Presupuesto</button>
+        <button onclick="setModoTabla('s1')" id="btn-vista-s1" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Avance S1 (162,0)</button>
+        <button onclick="setModoTabla('s2')" id="btn-vista-s2" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Avance S2 (4460,4)</button>
+        <button onclick="setModoTabla('s3')" id="btn-vista-s3" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Avance S3 (3036,0)</button>
+        <button onclick="setModoTabla('pendientes')" id="btn-vista-pendientes" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 cursor-pointer">Solo lo que Falta Comprar</button>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-300 shadow-sm overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-100 text-slate-800 font-bold border-b-2 border-slate-300 uppercase">
+              <th class="p-2.5 border-r border-slate-200">ELEMENTO</th>
+              <th class="p-2.5 text-center border-r border-slate-200 w-24">UNIDAD</th>
+              <th class="p-2.5 text-right border-r border-slate-200 w-24">CANTIDAD</th>
+              <th class="p-2.5 text-right border-r border-slate-200 w-28">PRECIO</th>
+              <th class="p-2.5 text-right w-32">COSTO</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-excel-tbody" class="divide-y divide-slate-200 font-mono">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== SECCIÓN 3: AVANCE DE OBRA ==================== -->
+    <section id="sec-avance" class="hidden space-y-5">
+      <!-- CONFIGURACIÓN DE FECHA DE INICIO Y PARALIZACIÓN -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-amber-100 text-amber-800 rounded-lg">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-xs text-slate-500 font-medium block">Fecha de Inicio de Obra</span>
+            <div class="flex items-center gap-2 mt-0.5">
+              <input type="date" id="input-fecha-inicio-obra" value="2026-10-07" onchange="cambiarFechaInicioObra(this.value)" class="text-xs font-bold border rounded px-2 py-1 bg-slate-50 cursor-pointer">
+              <span id="label-dia-inicio-obra" class="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">Miércoles</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2" id="btn-contenedor-paralizacion">
+          <!-- Dinámico -->
+        </div>
+
+        <button onclick="openModalRegistroDiarioCalendario()" class="admin-only px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i> + Registrar Avance del Día
+        </button>
+      </div>
+
+      <!-- ESTADO DE PARALIZACIÓN ACTUAL -->
+      <div id="resumen-paralizacion-box" class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-2.5 text-xs text-slate-600">
+        <i data-lucide="info" class="w-4 h-4 text-slate-400"></i>
+        <span id="resumen-paralizacion-texto">Obra en curso regular, sin suspensiones activas.</span>
+      </div>
+
+      <!-- CONTENEDOR DE AVANCES AGRUPADOS POR SEMANAS (SÁBADO CIERRE) -->
+      <div class="space-y-3" id="semanas-display-container">
+        <!-- Render dinámico -->
+      </div>
+    </section>
+
+    <!-- ==================== SECCIÓN 4: MANO DE OBRA ==================== -->
+    <section id="sec-mano-obra" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- PARTIDAS DE MANO DE OBRA -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+            <div>
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4 text-amber-500"></i> Partidas de Mano de Obra
+              </h3>
+              <p class="text-[11px] text-slate-500">Contrato base, adicionales y descuento pactado</p>
+            </div>
+            <button onclick="openModalPartidaMO()" class="admin-only px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded text-xs flex items-center gap-1 shadow-xs cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Añadir Apartado / Partida
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="border-b bg-slate-50 text-slate-600 uppercase">
+                  <th class="p-2">ELEMENTO / PARTIDA</th>
+                  <th class="p-2 text-center">UNIDAD</th>
+                  <th class="p-2 text-right">CANTIDAD</th>
+                  <th class="p-2 text-right">PRECIO</th>
+                  <th class="p-2 text-right">COSTO</th>
+                  <th class="p-2 text-center w-10"></th>
+                </tr>
+              </thead>
+              <tbody id="mo-partidas-tbody" class="divide-y divide-slate-100 font-mono">
+                <!-- Dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AVANCE DE PAGOS Y AGREGAR SEMANA SIGUIENTE -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+            <div>
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i data-lucide="banknote" class="w-4 h-4 text-emerald-500"></i> Avance de Pagos a Albañiles
+              </h3>
+              <p class="text-[11px] text-slate-500">Historial semanal y registro de nuevos desembolsos</p>
+            </div>
+            <button onclick="openModalNuevoPagoMO()" class="admin-only px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded text-xs flex items-center gap-1 shadow-xs cursor-pointer">
+              <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> + Registrar Pago / Sem. Sig.
+            </button>
+          </div>
+
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="border-b bg-slate-50 text-slate-600 uppercase">
+                <th class="p-2">SEMANA</th>
+                <th class="p-2">DETALLE</th>
+                <th class="p-2 text-right">MONTO (S/)</th>
+                <th class="p-2 text-center">ESTADO</th>
+                <th class="p-2 text-center w-10"></th>
+              </tr>
+            </thead>
+            <tbody id="mo-tbody" class="divide-y divide-slate-100 font-mono">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+
+          <div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs flex justify-between items-center">
+            <span class="font-semibold text-amber-900 font-sans">Saldo Pendiente por Liquidar a Cuadrilla:</span>
+            <span class="text-sm font-black text-amber-800 font-mono" id="mo-saldo-pendiente">S/ 3,290.00</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECCIÓN 5: TRANSFERENCIAS ==================== -->
+    <section id="sec-finanzas" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <i data-lucide="arrow-left-right" class="w-4 h-4 text-blue-600"></i> Registro de Transferencias desde el Extranjero (USD → PEN)
+            </h3>
+            <p class="text-xs text-slate-500">Conversión según tipo de cambio del día recibido</p>
+          </div>
+          <button onclick="openModalDeposito()" class="admin-only px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1 shadow cursor-pointer">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Registrar Remesa
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 border-b uppercase">
+                <th class="p-2.5">Fecha</th>
+                <th class="p-2.5">Operación</th>
+                <th class="p-2.5 text-right">Dólares (USD)</th>
+                <th class="p-2.5 text-right">T.C.</th>
+                <th class="p-2.5 text-right">Total Convertido (PEN)</th>
+              </tr>
+            </thead>
+            <tbody id="depositos-tbody" class="divide-y divide-slate-100 font-mono">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CUADRO DE LIQUIDACIÓN ROJO -->
+      <div class="bg-rose-600 text-white p-6 rounded-2xl shadow-lg border-2 border-rose-700">
+        <h4 class="text-sm font-black uppercase tracking-wider mb-4 flex items-center gap-2">
+          <i data-lucide="calculator" class="w-5 h-5"></i> CUADRO DE LIQUIDACIÓN DE FONDOS
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-rose-700/80 p-4 rounded-xl text-center">
+          <div class="p-2">
+            <span class="text-xs uppercase font-bold text-rose-200">TOTAL DEPÓSITO</span>
+            <div class="text-2xl font-black mt-1" id="fin-total-deposito">S/ 11,560.00</div>
+            <span class="text-[11px] text-rose-200" id="fin-subtotal-usd">$3,400.00 USD cambiados</span>
+          </div>
+          <div class="p-2 border-y md:border-y-0 md:border-x border-rose-500">
+            <span class="text-xs uppercase font-bold text-rose-200">TOTAL GASTO</span>
+            <div class="text-2xl font-black mt-1" id="fin-total-gasto">S/ 11,858.40</div>
+            <span class="text-[11px] text-rose-200">Materiales + Albañiles</span>
+          </div>
+          <div class="p-2">
+            <span class="text-xs uppercase font-bold text-rose-200">RESTA</span>
+            <div class="text-2xl font-black mt-1 text-yellow-300" id="fin-total-resta">-S/ 298.40</div>
+            <span class="text-xs font-bold text-white bg-rose-900/80 px-2 py-0.5 rounded mt-1 inline-block" id="fin-estado-resta-label">
+              Dinero adelantado (por cobrar)
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== MODALES COMPLETOS CON GESTIÓN SEGURA ==================== -->
+
+  <!-- MODAL: REGISTRAR AVANCE DIARIO MEDIANTE CALENDARIO -->
+  <div id="modal-registro-diario-cal" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <i data-lucide="calendar-plus" class="w-4 h-4 text-amber-600"></i> Registrar Avance del Día
+        </h4>
+        <button onclick="closeModal('modal-registro-diario-cal')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Selecciona la Fecha en el Calendario</label>
+          <input type="date" id="cal-input-fecha" onchange="onCalendarioFechaChange(this.value, 'nuevo')" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer">
+        </div>
+
+        <div class="p-2.5 bg-amber-50 rounded-lg border border-amber-200 flex items-center justify-between text-amber-950 font-medium">
+          <span>Semana de Trabajo: <strong id="cal-auto-semana-label" class="text-amber-800 font-bold">-</strong></span>
+          <span class="text-slate-500">Día: <strong id="cal-auto-dia-label" class="text-slate-800 font-bold">-</strong></span>
+        </div>
+
+        <div id="cal-aviso-domingo" class="hidden p-2 bg-rose-50 text-rose-700 rounded border border-rose-200 text-[11px]">
+          ⚠️ <strong>Nota:</strong> Has seleccionado un Domingo (día no laborable regular). La jornada se computará como guardia o labor dominical.
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Descripción del Trabajo Realizado en Campo</label>
+          <textarea id="cal-input-descripcion" rows="3" placeholder="Detalla qué tareas se hicieron (encofrado, colocación de acero, desencofrado, limpieza, etc.)..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-registro-diario-cal')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="guardarAvanceCalendario()" class="px-3.5 py-1.5 text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg cursor-pointer">Guardar Avance del Día</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDITAR JORNADA EXISTENTE -->
+  <div id="modal-editar-dia" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <i data-lucide="edit-3" class="w-4 h-4 text-amber-600"></i> Modificar Jornada de Trabajo
+        </h4>
+        <button onclick="closeModal('modal-editar-dia')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+
+      <input type="hidden" id="edit-dia-id">
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Fecha de la Jornada</label>
+          <input type="date" id="edit-input-fecha" onchange="onCalendarioFechaChange(this.value, 'edit')" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer">
+        </div>
+
+        <div class="p-2.5 bg-amber-50 rounded-lg border border-amber-200 flex items-center justify-between text-amber-950 font-medium">
+          <span>Semana Asignada: <strong id="edit-auto-semana-label" class="text-amber-800 font-bold">-</strong></span>
+          <span class="text-slate-500">Día: <strong id="edit-auto-dia-label" class="text-slate-800 font-bold">-</strong></span>
+        </div>
+
+        <div id="edit-aviso-domingo" class="hidden p-2 bg-rose-50 text-rose-700 rounded border border-rose-200 text-[11px]">
+          ⚠️ <strong>Nota:</strong> Es Domingo (Día no regular).
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Descripción del Avance (Añadir o Quitar Detalle)</label>
+          <textarea id="edit-input-descripcion" rows="4" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-editar-dia')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="guardarEdicionDia()" class="px-3.5 py-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg cursor-pointer">Actualizar Jornada</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PARALIZACIÓN DE OBRA -->
+  <div id="modal-paralizacion" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-rose-700 text-sm flex items-center gap-1.5">
+          <i data-lucide="pause-circle" class="w-4 h-4"></i> Suspender / Paralizar Obra
+        </h4>
+        <button onclick="closeModal('modal-paralizacion')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Fecha de Inicio de Suspensión</label>
+          <input type="date" id="paraliza-fecha-inicio" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none cursor-pointer">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Motivo Principal</label>
+          <select id="paraliza-motivo-select" class="w-full p-2 border rounded-lg cursor-pointer">
+            <option value="LLUVIAS / CLIMA ADVERSO">Lluvias / Clima adverso</option>
+            <option value="DESABASTECIMIENTO DE MATERIAL">Falta / Retraso de materiales</option>
+            <option value="REPLANTEO / CONSULTA TECNICA">Consulta o replanteo técnico</option>
+            <option value="FALTA DE FONDOS / TRANSFERENCIA">Esperando transferencia de fondos</option>
+            <option value="TRAMITE / LICENCIA MUNICIPAL">Observación o trámite municipal</option>
+            <option value="OTRO">Otro motivo específico</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Observaciones / Detalle adicional</label>
+          <textarea id="paraliza-motivo-detalle" rows="2" placeholder="Explica brevemente la razón de la suspensión..." class="w-full p-2 border rounded-lg"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-paralizacion')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="guardarParalizacion()" class="px-3.5 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg cursor-pointer">Confirmar Suspensión</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REANUDAR OBRA -->
+  <div id="modal-reanudacion" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-emerald-700 text-sm flex items-center gap-1.5">
+          <i data-lucide="play-circle" class="w-4 h-4"></i> Reanudar Labores de Obra
+        </h4>
+        <button onclick="closeModal('modal-reanudacion')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="p-2.5 bg-slate-50 rounded border border-slate-200">
+          <span id="reanudar-info-motivo" class="block font-semibold text-slate-700">Motivo: -</span>
+          <span id="reanudar-info-desde" class="block text-slate-500 mt-0.5">Suspendida desde: -</span>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Fecha de Reinicio de Labores</label>
+          <input type="date" id="reanudacion-fecha" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-reanudacion')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="guardarReanudacion()" class="px-3.5 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg cursor-pointer">Confirmar Reanudación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GESTIÓN DE MATERIALES (MODIFICAR EXISTENTES Y AGREGAR NUEVOS) -->
+  <div id="modal-material" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b pb-2">
+        <div>
+          <h4 class="font-bold text-slate-900 text-base flex items-center gap-2">
+            <i data-lucide="boxes" class="w-5 h-5 text-amber-600"></i> Gestión y Catálogo de Materiales
+          </h4>
+          <p class="text-xs text-slate-500">Modifica precios y cantidades existentes, o añade nuevos materiales al presupuesto.</p>
+        </div>
+        <button onclick="closeModal('modal-material')" class="text-slate-400 hover:text-slate-600 cursor-pointer text-lg font-bold">✕</button>
+      </div>
+
+      <!-- SECCIÓN A: AGREGAR NUEVO MATERIAL (DESPLEGABLE / FORMULARIO RÁPIDO) -->
+      <div class="bg-amber-50/70 border border-amber-200/90 rounded-xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-amber-950 uppercase tracking-wide flex items-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-amber-700"></i> + Agregar un Material Nuevo al Presupuesto
+          </span>
+          <span class="text-[11px] text-amber-800 font-medium">Ingreso directo al catálogo</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2 text-xs">
+          <div class="md:col-span-1">
+            <label class="block font-semibold text-slate-700 mb-0.5 text-[11px]">Categoría</label>
+            <select id="new-mat-cat" class="w-full p-1.5 border rounded-lg bg-white cursor-pointer font-medium">
+              <option value="ACERO">ACERO</option>
+              <option value="ADICIONALES" selected>ADICIONALES</option>
+              <option value="LADRILLOS">LADRILLOS</option>
+              <option value="ELECTRICAS">ELECTRICAS</option>
+              <option value="SANITARIAS">SANITARIAS</option>
+              <option value="MIXER">MIXER</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block font-semibold text-slate-700 mb-0.5 text-[11px]">Nombre del Material</label>
+            <input type="text" id="new-mat-nombre" placeholder="Ej. Cinta aislante, Codo PVC 2''..." class="w-full p-1.5 border rounded-lg bg-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-0.5 text-[11px]">Unidad</label>
+            <input type="text" id="new-mat-und" placeholder="UND / KG" class="w-full p-1.5 border rounded-lg bg-white uppercase">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-0.5 text-[11px]">Cantidad</label>
+            <input type="number" id="new-mat-cant" value="1" step="any" min="0" class="w-full p-1.5 border rounded-lg bg-white font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-0.5 text-[11px]">Precio (S/)</label>
+            <input type="number" id="new-mat-precio" value="0" step="any" min="0" class="w-full p-1.5 border rounded-lg bg-white font-mono">
+          </div>
+        </div>
+        <div class="flex justify-end pt-1">
+          <button onclick="guardarNuevoMaterial()" class="px-3 py-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg cursor-pointer flex items-center gap-1 shadow-xs">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar a la Lista
+          </button>
+        </div>
+      </div>
+
+      <!-- SECCIÓN B: BUSCADOR Y LISTA DE MATERIALES EXISTENTES EDITABLES -->
+      <div class="flex items-center justify-between gap-3 text-xs pt-1">
+        <span class="font-bold text-slate-800 uppercase tracking-wide">LISTA DE MATERIALES EXISTENTES (MODIFICA DIRECTO)</span>
+        <div class="flex items-center gap-2">
+          <input type="text" id="filtro-gestion-mat-text" oninput="renderListaGestionMateriales()" placeholder="Buscar material..." class="p-1.5 border rounded-lg w-44 md:w-56 text-xs bg-slate-50">
+          <select id="filtro-gestion-mat-cat" onchange="renderListaGestionMateriales()" class="p-1.5 border rounded-lg text-xs bg-slate-50 cursor-pointer">
+            <option value="TODOS">Todas las categorías</option>
+            <option value="ACERO">ACERO</option>
+            <option value="ADICIONALES">ADICIONALES</option>
+            <option value="LADRILLOS">LADRILLOS</option>
+            <option value="ELECTRICAS">ELECTRICAS</option>
+            <option value="SANITARIAS">SANITARIAS</option>
+            <option value="MIXER">MIXER</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50/50 p-2 space-y-2" id="contenedor-gestion-materiales-lista">
+        <!-- Render dinámico con inputs directos de edición -->
+      </div>
+
+      <div class="flex justify-between items-center pt-2 border-t text-xs">
+        <span class="text-slate-500 italic">* Las modificaciones en cantidad o precio se actualizan de inmediato en los presupuestos y balances.</span>
+        <button onclick="closeModal('modal-material')" class="px-4 py-2 text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg cursor-pointer">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR COMPRA POR FECHA Y ELEMENTOS PENDIENTES -->
+  <div id="modal-registro-compra" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-5 space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <i data-lucide="shopping-cart" class="w-4 h-4 text-emerald-600"></i> Registrar Compra de Materiales
+        </h4>
+        <button onclick="closeModal('modal-registro-compra')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Fecha de la Compra</label>
+          <input type="date" id="compra-input-fecha" onchange="onCompraFechaChange(this.value)" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
+        </div>
+
+        <div class="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 flex items-center justify-between text-emerald-950 font-medium">
+          <span>Semana Asignada: <strong id="compra-auto-semana-label" class="text-emerald-800 font-bold">-</strong></span>
+          <span class="text-slate-600">Día de compra: <strong id="compra-auto-dia-label" class="text-slate-800 font-bold">-</strong></span>
+        </div>
+      </div>
+
+      <!-- LISTADO DE MATERIALES QUE FALTAN COMPRAR -->
+      <div class="flex-1 overflow-y-auto pr-1 space-y-3 border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+        <div class="flex items-center justify-between text-xs text-slate-500 font-semibold border-b pb-1">
+          <span>MATERIALES PENDIENTES POR CATEGORÍA</span>
+          <span>CANTIDAD A INGRESAR</span>
+        </div>
+        <div id="lista-compras-pendientes-display" class="space-y-4 text-xs">
+          <!-- Renderizado dinámico por categoría -->
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center pt-2 border-t">
+        <div class="text-xs text-slate-600">
+          Total de esta compra: <strong id="compra-monto-estimado-preview" class="font-mono text-emerald-700 font-bold text-sm">S/ 0.00</strong>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="closeModal('modal-registro-compra')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+          <button onclick="guardarRegistroCompra()" class="px-3.5 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg cursor-pointer">Guardar Compra</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR PARTIDA DE MANO DE OBRA -->
+  <div id="modal-partida-mo" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-800 text-sm">Añadir Apartado / Partida de Mano de Obra</h4>
+        <button onclick="closeModal('modal-partida-mo')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nombre del Elemento / Trabajo</label>
+          <input type="text" id="new-mo-elemento" placeholder="Ej. Tarrajeo de vigas, Parapeto frontal..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Unidad</label>
+            <input type="text" id="new-mo-und" placeholder="M2 / ML / GLB" class="w-full p-2 border rounded-lg">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Cantidad</label>
+            <input type="number" id="new-mo-cant" value="1" step="any" class="w-full p-2 border rounded-lg">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Precio Unit. (S/)</label>
+            <input type="number" id="new-mo-precio" value="0" step="any" class="w-full p-2 border rounded-lg">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-partida-mo')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="guardarPartidaMO()" class="px-3 py-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg cursor-pointer">Guardar Partida</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR PAGO A CUADRILLA -->
+  <div id="modal-nuevo-pago-mo" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-800 text-sm">Registrar Pago a Albañiles (Siguiente Semana)</h4>
+        <button onclick="closeModal('modal-nuevo-pago-mo')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Identificador de Semana</label>
+          <input type="text" id="new-pago-sem" placeholder="Ej. S4, Semana 4, Cierre Vaciado" class="w-full p-2 border rounded-lg">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Detalle / Concepto</label>
+          <input type="text" id="new-pago-detalle" placeholder="Ej. Pago semanal según avance / Liquidación" class="w-full p-2 border rounded-lg">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Monto Pagado en Soles (S/)</label>
+          <input type="number" id="new-pago-monto" placeholder="0.00" step="any" class="w-full p-2 border rounded-lg text-base font-bold text-emerald-700">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-nuevo-pago-mo')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="guardarNuevoPagoMO()" class="px-3 py-1.5 text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg cursor-pointer">Registrar Pago</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR DEPÓSITO / REMESA EN DÓLARES -->
+  <div id="modal-nuevo-deposito" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-blue-600"></i> Registrar Remesa USD
+        </h4>
+        <button onclick="closeModal('modal-nuevo-deposito')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Monto en Dólares ($ USD)</label>
+          <input type="number" id="dep-input-usd" placeholder="Ej. 1000" step="any" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-blue-700">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tipo de Cambio (T.C.)</label>
+          <input type="number" id="dep-input-tc" value="3.40" step="any" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Fecha u Operación</label>
+          <input type="text" id="dep-input-fecha" placeholder="Ej. 26-oct" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-nuevo-deposito')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="guardarNuevoDeposito()" class="px-3.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg cursor-pointer">Guardar Transferencia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMACIÓN GENERAL -->
+  <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-5 space-y-3">
+      <div class="flex items-center gap-2 text-rose-600 font-bold text-sm">
+        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        <span id="confirm-modal-title">Confirmar Acción</span>
+      </div>
+      <p id="confirm-modal-msg" class="text-xs text-slate-600 leading-relaxed"></p>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-confirm')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button id="confirm-modal-btn" class="px-3.5 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg cursor-pointer">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MENSAJE / AVISO INFORMATIVO -->
+  <div id="modal-aviso" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-5 space-y-3">
+      <div class="flex items-center gap-2 text-amber-600 font-bold text-sm">
+        <i data-lucide="info" class="w-5 h-5"></i>
+        <span id="aviso-modal-title">Aviso</span>
+      </div>
+      <p id="aviso-modal-msg" class="text-xs text-slate-600 leading-relaxed"></p>
+      <div class="flex justify-end pt-2 border-t">
+        <button onclick="closeModal('modal-aviso')" class="px-3.5 py-1.5 text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg cursor-pointer">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN / ACCESO ADMINISTRADOR -->
+  <div id="modal-login-admin" class="fixed inset-0 bg-slate-900/60 modal-hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-xs w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+          <i data-lucide="lock" class="w-4 h-4 text-amber-500"></i> Acceso Administrador
+        </h4>
+        <button onclick="closeModal('modal-login-admin')" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <p class="text-slate-500">Ingresa tu contraseña para habilitar la edición y registro de compras y avances.</p>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Contraseña de Administrador</label>
+          <input type="password" id="login-admin-password" placeholder="Contraseña..." onkeydown="if(event.key === 'Enter') procesarLoginAdmin()" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+        </div>
+        <p id="login-error-msg" class="hidden text-rose-600 font-semibold text-[11px]"></p>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeModal('modal-login-admin')" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Cancelar</button>
+        <button onclick="procesarLoginAdmin()" class="px-3.5 py-1.5 text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg cursor-pointer">Ingresar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT: LÓGICA COMPLETA Y PERSISTENCIA -->
+  <script>
+    // SISTEMA DE SEGURIDAD / CONTROL DE ROLES
+    // Contraseña actualizada para acceso de Administrador
+    const ADMIN_PASSWORD_HASH = "Arqui04tectura";
+    let isAdmin = localStorage.getItem('obra_auth_admin') === 'true';
+
+    window.openModalLoginAdmin = function() {
+      const err = document.getElementById('login-error-msg');
+      const pass = document.getElementById('login-admin-password');
+      if (err) err.classList.add('hidden');
+      if (pass) pass.value = '';
+      const m = document.getElementById('modal-login-admin');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+        setTimeout(() => { if (pass) pass.focus(); }, 100);
+      }
+    };
+
+    window.procesarLoginAdmin = function() {
+      const pass = document.getElementById('login-admin-password').value.trim();
+      const err = document.getElementById('login-error-msg');
+      if (pass === ADMIN_PASSWORD_HASH) {
+        isAdmin = true;
+        localStorage.setItem('obra_auth_admin', 'true');
+        closeModal('modal-login-admin');
+        aplicarPermisosRol();
+        mostrarAviso("Has ingresado como Administrador. Ya puedes registrar compras, pagos y editar avances de obra.", "Acceso Autorizado");
+      } else {
+        if (err) {
+          err.textContent = "Contraseña incorrecta. Inténtalo nuevamente.";
+          err.classList.remove('hidden');
+        }
+      }
+    };
+
+    window.cerrarSesionAdmin = function() {
+      mostrarConfirmacion("¿Deseas salir del modo administrador y volver a modo visitante (solo lectura)?", () => {
+        isAdmin = false;
+        localStorage.setItem('obra_auth_admin', 'false');
+        aplicarPermisosRol();
+      }, "Cerrar Sesión");
+    };
+
+    function aplicarPermisosRol() {
+      const authContainer = document.getElementById('auth-status-container');
+      if (authContainer) {
+        if (isAdmin) {
+          authContainer.innerHTML = `
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1.5 text-amber-400"></i> Administrador
+            </span>
+            <button onclick="cerrarSesionAdmin()" title="Cerrar sesión de administrador" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 cursor-pointer flex items-center gap-1">
+              <i data-lucide="log-out" class="w-3 h-3"></i> Salir
+            </button>
+          `;
+        } else {
+          authContainer.innerHTML = `
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              <i data-lucide="eye" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i> Solo Lectura
+            </span>
+            <button onclick="openModalLoginAdmin()" class="text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2.5 py-1 rounded-lg cursor-pointer flex items-center gap-1 shadow-sm">
+              <i data-lucide="lock" class="w-3 h-3"></i> Acceso Admin
+            </button>
+          `;
+        }
+      }
+
+      // Ocultar / Mostrar todos los botones exclusivos de edición
+      const adminElements = document.querySelectorAll('.admin-only');
+      adminElements.forEach(el => {
+        if (isAdmin) {
+          el.style.display = '';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      // Deshabilitar inputs directos si es visitante
+      const inputFechaInicio = document.getElementById('input-fecha-inicio-obra');
+      if (inputFechaInicio) {
+        inputFechaInicio.disabled = !isAdmin;
+      }
+
+      // Re-renderizar módulos para actualizar botones internos (como editar o eliminar jornadas)
+      renderAvanceDeObra();
+      renderManoObra();
+      renderParalizacionBanner();
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    // SISTEMA DE MODALES ROBUSTO SIN BLOQUEOS
+    window.mostrarAviso = function(mensaje, titulo = "Aviso") {
+      const elMsg = document.getElementById('aviso-modal-msg');
+      const elTit = document.getElementById('aviso-modal-title');
+      if (elMsg) elMsg.textContent = mensaje;
+      if (elTit) elTit.textContent = titulo;
+      const modal = document.getElementById('modal-aviso');
+      if (modal) {
+        modal.classList.remove('modal-hidden');
+        modal.classList.add('modal-visible');
+      }
+    };
+
+    window.mostrarConfirmacion = function(mensaje, onConfirm, titulo = "Confirmar Acción") {
+      const elMsg = document.getElementById('confirm-modal-msg');
+      const elTit = document.getElementById('confirm-modal-title');
+      const btn = document.getElementById('confirm-modal-btn');
+      if (elMsg) elMsg.textContent = mensaje;
+      if (elTit) elTit.textContent = titulo;
+      if (btn) {
+        btn.onclick = () => {
+          closeModal('modal-confirm');
+          if (typeof onConfirm === 'function') onConfirm();
+        };
+      }
+      const modal = document.getElementById('modal-confirm');
+      if (modal) {
+        modal.classList.remove('modal-hidden');
+        modal.classList.add('modal-visible');
+      }
+    };
+
+    window.switchTab = function(tabId) {
+      const tabs = ['dashboard', 'compras', 'avance', 'mano-obra', 'finanzas'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`sec-${t}`);
+        const btn = document.getElementById(`tab-${t}`);
+        if (!sec || !btn) return;
+        if (t === tabId) {
+          sec.classList.remove('hidden');
+          btn.className = "py-3 px-1 tab-active flex items-center gap-1.5 whitespace-nowrap cursor-pointer";
+        } else {
+          sec.classList.add('hidden');
+          btn.className = "py-3 px-1 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap cursor-pointer";
+        }
+      });
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    window.closeModal = function(id) {
+      const m = document.getElementById(id);
+      if (m) {
+        m.classList.remove('modal-visible');
+        m.classList.add('modal-hidden');
+      }
+    };
+
+    const CATEGORIAS_CONFIG = {
+      ACERO: { nombre: "ACERO", colorBg: "bg-blue-100 text-blue-900 border-blue-200" },
+      ADICIONALES: { nombre: "ADICIONALES", colorBg: "bg-amber-100 text-amber-900 border-amber-200" },
+      LADRILLOS: { nombre: "LADRILLOS", colorBg: "bg-orange-100 text-orange-900 border-orange-200" },
+      ELECTRICAS: { nombre: "ELECTRICAS", colorBg: "bg-emerald-100 text-emerald-900 border-emerald-200" },
+      SANITARIAS: { nombre: "SANITARIAS", colorBg: "bg-sky-100 text-sky-900 border-sky-200" },
+      MIXER: { nombre: "MIXER", colorBg: "bg-slate-200 text-slate-900 border-slate-300" }
+    };
+
+    const INITIAL_MATERIALES = [
+      // ACERO: 5264,4
+      { id: 1, cat: "ACERO", nombre: "3/4\"", und: "UND", cant: 4, precio: 81.9, s1: 0, s2: 4, s3: 0 },
+      { id: 2, cat: "ACERO", nombre: "5/8\"", und: "UND", cant: 38, precio: 53.2, s1: 0, s2: 30, s3: 8 },
+      { id: 3, cat: "ACERO", nombre: "1/2\"", und: "UND", cant: 41, precio: 34.4, s1: 0, s2: 15, s3: 26 },
+      { id: 4, cat: "ACERO", nombre: "3/8\"", und: "UND", cant: 63, precio: 19.8, s1: 0, s2: 63, s3: 0 },
+      { id: 5, cat: "ACERO", nombre: "1/4\"", und: "UND", cant: 33, precio: 7.8, s1: 0, s2: 33, s3: 0 },
+      // ADICIONALES: 846,0
+      { id: 6, cat: "ADICIONALES", nombre: "CLAVOS 2''", und: "KG", cant: 10, precio: 6.0, s1: 4, s2: 2, s3: 4 },
+      { id: 7, cat: "ADICIONALES", nombre: "CLAVOS 2.5''", und: "KG", cant: 10, precio: 6.0, s1: 4, s2: 2, s3: 4 },
+      { id: 8, cat: "ADICIONALES", nombre: "CLAVOS 4''", und: "KG", cant: 10, precio: 6.0, s1: 4, s2: 2, s3: 4 },
+      { id: 9, cat: "ADICIONALES", nombre: "CLAVOS DE ACERO 3''", und: "CAJA", cant: 2, precio: 15.0, s1: 1, s2: 1, s3: 0 },
+      { id: 10, cat: "ADICIONALES", nombre: "CLAVOS DE ACERO 4''", und: "CAJA", cant: 1, precio: 15.0, s1: 1, s2: 0, s3: 0 },
+      { id: 11, cat: "ADICIONALES", nombre: "CLAVOS DE ACERO 2,5''", und: "CAJA", cant: 2, precio: 15.0, s1: 0, s2: 0, s3: 2 },
+      { id: 12, cat: "ADICIONALES", nombre: "ALAMBRE 16", und: "KG", cant: 30, precio: 6.0, s1: 5, s2: 20, s3: 0 },
+      { id: 13, cat: "ADICIONALES", nombre: "ALABRE 8", und: "KG", cant: 10, precio: 6.0, s1: 5, s2: 0, s3: 5 },
+      { id: 14, cat: "ADICIONALES", nombre: "TECNOPOR", und: "UNIDAD", cant: 4, precio: 15.0, s1: 0, s2: 4, s3: 0 },
+      { id: 15, cat: "ADICIONALES", nombre: "SEPARADORES 4CM", und: "CIENTO", cant: 1, precio: 80.0, s1: 0, s2: 1, s3: 0 },
+      { id: 16, cat: "ADICIONALES", nombre: "SEPARADORES 2CM", und: "CIENTO", cant: 2, precio: 70.0, s1: 0, s2: 2, s3: 0 },
+      { id: 17, cat: "ADICIONALES", nombre: "REMOVEDOR DE OXIDO", und: "UND", cant: 1, precio: 40.0, s1: 0, s2: 1, s3: 0 },
+      { id: 18, cat: "ADICIONALES", nombre: "TIZAS", und: "CAJA", cant: 1, precio: 5.0, s1: 0, s2: 1, s3: 0 },
+      { id: 19, cat: "ADICIONALES", nombre: "DISCO TRONZADORA", und: "UND", cant: 1, precio: 20.0, s1: 0, s2: 1, s3: 0 },
+      { id: 20, cat: "ADICIONALES", nombre: "PEGAMENTO APRA TUBO", und: "UND", cant: 1, precio: 18.0, s1: 0, s2: 0, s3: 1 },
+      { id: 21, cat: "ADICIONALES", nombre: "DISCO DE CORTE", und: "UND", cant: 3, precio: 6.0, s1: 0, s2: 0, s3: 3 },
+      // LADRILLOS: 1517,0
+      { id: 22, cat: "LADRILLOS", nombre: "LADRILLO 30X30X15", und: "UND", cant: 410, precio: 3.7, s1: 0, s2: 0, s3: 410 },
+      // ELECTRICAS: 140,0
+      { id: 23, cat: "ELECTRICAS", nombre: "TUBOS DE LUZ", und: "UND", cant: 20, precio: 3.5, s1: 0, s2: 0, s3: 0 },
+      { id: 24, cat: "ELECTRICAS", nombre: "CAJAS OCTOGONALES", und: "UND", cant: 20, precio: 3.5, s1: 0, s2: 0, s3: 0 },
+      // SANITARIAS: 79,0
+      { id: 25, cat: "SANITARIAS", nombre: "TUBO 2''", und: "UND", cant: 1, precio: 15.0, s1: 0, s2: 0, s3: 1 },
+      { id: 26, cat: "SANITARIAS", nombre: "TUBO 3''", und: "UND", cant: 1, precio: 18.0, s1: 0, s2: 0, s3: 1 },
+      { id: 27, cat: "SANITARIAS", nombre: "TUBO 1''", und: "UND", cant: 1, precio: 16.0, s1: 0, s2: 0, s3: 1 },
+      { id: 28, cat: "SANITARIAS", nombre: "TUBO 3/4''", und: "UND", cant: 2, precio: 15.0, s1: 0, s2: 0, s3: 2 },
+      // MIXER: 5775,0
+      { id: 29, cat: "MIXER", nombre: "CONCRETO", und: "M3", cant: 15, precio: 375.0, s1: 0, s2: 0, s3: 0 },
+      { id: 30, cat: "MIXER", nombre: "BOMBA", und: "UND", cant: 1, precio: 150.0, s1: 0, s2: 0, s3: 0 }
+    ];
+
+    const INITIAL_DEPOSITOS = [
+      { id: 1, fecha: "10-oct", tipo: "TRANSFEENCIA", usd: 2400, tc: 3.40, pen: 8160 },
+      { id: 2, fecha: "10-oct", tipo: "TRANSFEENCIA", usd: 1000, tc: 3.40, pen: 3400 }
+    ];
+
+    const INITIAL_PARTIDAS_MO = [
+      { id: 1, elemento: "TECHO", und: "M2", cant: 63, precio: 80, fijo: true },
+      { id: 2, elemento: "VIGA PERALTADA", und: "ML", cant: 30, precio: 65, fijo: true },
+      { id: 3, elemento: "ESCALERA", und: "UND", cant: 1, precio: 1500, fijo: true },
+      { id: 4, elemento: "se descontará 1000 por costo de lateros, ese diienro ira para el mixer", und: "-", cant: 1, precio: -1000, fijo: true, esDescuento: true }
+    ];
+
+    const INITIAL_PAGOS_MO = [
+      { id: 1, semana: "S1", detalle: "Pago semana 1 cuadrilla", monto: 1000 },
+      { id: 2, semana: "S2", detalle: "Pago semana 2 cuadrilla", monto: 2000 },
+      { id: 3, semana: "S3", detalle: "Pago semana 3 cuadrilla", monto: 1200 }
+    ];
+
+    // JORNADAS DIARIAS INICIALES (Inicio Miércoles 07-Octubre-2026)
+    const INITIAL_JORNADAS = [
+      // SEMANA 1 (Miércoles 07/10 a Sábado 10/10)
+      { id: 101, fecha: "2026-10-07", texto: "TRAJERON MADERAS (TABLAS, SOLERAS Y PIES DERECHOS)", resumen: "Recepción, descarga y acopio de madera para encofrados en obra.", tags: ["Abastecimiento", "Madera", "Soleras", "PiesDerechos"] },
+      { id: 102, fecha: "2026-10-08", texto: "ENCOFRADO BASES Y PIES DERECHOS DE VIGAS PERALTADAS (EJE A,B,C y D)", resumen: "Encofrado de fondos y puntales en vigas peraltadas longitudinales.", tags: ["Encofrado", "VigasPeraltadas", "EjesLongitudinales"] },
+      { id: 103, fecha: "2026-10-09", texto: "ENCOFRADO BASES Y PIES DERECHOS DE VIGAS PERALTADAS (EJE 1 y 2)", resumen: "Montaje de soporte y fondos en vigas peraltadas transversales.", tags: ["Encofrado", "VigasPeraltadas", "EjesTransversales"] },
+      { id: 104, fecha: "2026-10-10", texto: "TRABAJOS PRELIMINARES PARA VIGA QUE ESTA EN EL LADO DE LA ESCALERA Y ARMADO DE ESTRIBOS", resumen: "Habilitación de armadura de viga lateral de escalera y estribaje.", tags: ["HabilitadoAcero", "Estribos", "ZonaEscalera"] },
+      
+      // SEMANA 2 (Lunes 12/10 a Sábado 17/10)
+      { id: 201, fecha: "2026-10-12", texto: "LIMPIEZA DE AREA DE TRABAJO DE MATERIALES QUE ESTABAN EN EL LUGAR (LADRILLOS Y PIEDRA CHANCADA), ARMADO DE VIGA EJE A y B - OBSERVACION: CORREGIR CUANTIA DE ESTRIBOS EN LA VIGA EJE A", resumen: "Limpieza del área y colocado de armadura en vigas A y B. Observación técnica registrada en estribos Eje A.", tags: ["Limpieza", "AceroVigas", "ControlCalidad", "ObservaciónEstribos"] },
+      { id: 202, fecha: "2026-10-13", texto: "ARMADO DE VIGA EJE D Y C", resumen: "Instalación de armadura de refuerzo en vigas peraltadas perimétricas C y D.", tags: ["AceroVigas", "VigaEjeC", "VigaEjeD"] },
+      { id: 203, fecha: "2026-10-14", texto: "ARMADO DE TABLAS Y PIES DERECHOS DE PAÑO 3", resumen: "Encofrado de fondo de losa aligerada en Paño 3.", tags: ["EncofradoLosa", "Paño3", "Puntales"] },
+      { id: 204, fecha: "2026-10-15", texto: "ARMADO DE VIGA EJE B", resumen: "Ajuste de fierrería, nivelación y amarres de viga Eje B.", tags: ["AceroVigas", "EjeB", "Ajustes"] },
+      { id: 205, fecha: "2026-10-16", texto: "ARMADO DE TABLAS Y PIES DERECHOS DE PAÑO 2", resumen: "Encofrado de fondo y soleras para la losa del Paño 2.", tags: ["EncofradoLosa", "Paño2", "Soleras"] },
+      { id: 206, fecha: "2026-10-17", texto: "ARMADO DE ESTRIBOS Y VIGA PERALTADA EJE 1 Y 2", resumen: "Colocación de estribaje y cerrado de armaduras principales transversales.", tags: ["AceroVigas", "Estribos", "EjesTransversales"] },
+
+      // SEMANA 3 (Lunes 19/10 a Sábado 24/10)
+      { id: 301, fecha: "2026-10-19", texto: "ARMADO DE TABLAS Y PIES DERECHOS DE PAÑO 1", resumen: "Inicio de apuntalamiento y fondo de losa en Paño 1.", tags: ["EncofradoLosa", "Paño1"] },
+      { id: 302, fecha: "2026-10-20", texto: "ARMADO DE TABLAS Y PIES DERECHOS DE PAÑO 1", resumen: "Cierre y nivelación final de encofrado de madera en Paño 1.", tags: ["EncofradoCompleto", "Paño1", "Nivelación"] },
+      { id: 303, fecha: "2026-10-21", texto: "ARMADO DE ESTRIBOS Y VIGA CHATA EJE 1", resumen: "Habilitado de fierro y colocación de viga chata sobre muro en Eje 1.", tags: ["VigaChata", "Eje1", "Estribos"] },
+      { id: 304, fecha: "2026-10-22", texto: "ARMADO DE ESTRIBOS Y VIGA CHATA EJE 1 Y EMPEZANDO VIGA CHATA EJE 2", resumen: "Culminación de viga chata Eje 1 e inicio de armadura en Eje 2.", tags: ["VigaChata", "Eje1", "Eje2"] },
+      { id: 305, fecha: "2026-10-23", texto: "ARMADO DE ESTRIBOS Y VIGA CHATA EJE 2", resumen: "Finalización de estribaje y colocado de armadura en viga chata Eje 2.", tags: ["VigaChata", "Eje2", "Fierrería"] },
+      { id: 306, fecha: "2026-10-24", texto: "ARMADO DE VIGAS CHATAS DE TRAGALUZ", resumen: "Armado de refuerzo perimetral y confinamiento estructural del ducto de tragaluz.", tags: ["VigasChatas", "Tragaluz", "Confinamiento"] }
+    ];
+
+    // ESTADO GENERAL CON PERSISTENCIA LOCAL
+    let materiales = JSON.parse(localStorage.getItem('obra_mat_v6')) || INITIAL_MATERIALES;
+    let depositos = JSON.parse(localStorage.getItem('obra_dep_v6')) || INITIAL_DEPOSITOS;
+    let partidasMO = JSON.parse(localStorage.getItem('obra_part_mo_v6')) || INITIAL_PARTIDAS_MO;
+    let pagosMO = JSON.parse(localStorage.getItem('obra_pag_mo_v6')) || INITIAL_PAGOS_MO;
+    let jornadas = JSON.parse(localStorage.getItem('obra_jornadas_v6')) || INITIAL_JORNADAS;
+    let fechaInicioObra = localStorage.getItem('obra_fecha_inicio_v6') || "2026-10-07"; // Miércoles
+    let paralizacion = JSON.parse(localStorage.getItem('obra_paralizacion_v6')) || null;
+    let modoTablaActual = 'presupuesto';
+
+    // GUARDAR ESTADO
+    window.saveState = function() {
+      try {
+        localStorage.setItem('obra_mat_v6', JSON.stringify(materiales));
+        localStorage.setItem('obra_dep_v6', JSON.stringify(depositos));
+        localStorage.setItem('obra_part_mo_v6', JSON.stringify(partidasMO));
+        localStorage.setItem('obra_pag_mo_v6', JSON.stringify(pagosMO));
+        localStorage.setItem('obra_jornadas_v6', JSON.stringify(jornadas));
+        localStorage.setItem('obra_fecha_inicio_v6', fechaInicioObra);
+        localStorage.setItem('obra_paralizacion_v6', JSON.stringify(paralizacion));
+      } catch (e) {
+        console.error("Error guardando localStorage", e);
+      }
+      renderAll();
+    };
+
+    window.resetData = function() {
+      mostrarConfirmacion("¿Deseas restaurar todos los datos a la plantilla inicial de la obra?", () => {
+        try {
+          localStorage.clear();
+        } catch (e) {}
+        materiales = INITIAL_MATERIALES;
+        depositos = INITIAL_DEPOSITOS;
+        partidasMO = INITIAL_PARTIDAS_MO;
+        pagosMO = INITIAL_PAGOS_MO;
+        jornadas = INITIAL_JORNADAS;
+        fechaInicioObra = "2026-10-07";
+        paralizacion = null;
+        const inp = document.getElementById('input-fecha-inicio-obra');
+        if (inp) inp.value = fechaInicioObra;
+        saveState();
+      }, "Reiniciar Datos de Obra");
+    };
+
+    function renderAll() {
+      renderParalizacionBanner();
+      renderDashboard();
+      renderTablaExcel();
+      renderAvanceDeObra();
+      renderManoObra();
+      renderFinanzas();
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    // CÁLCULO DE SEMANAS
+    function getDiaNombre(fechaStr) {
+      if (!fechaStr) return '';
+      const [y, m, d] = fechaStr.split('-').map(Number);
+      const dt = new Date(y, m - 1, d, 12, 0, 0);
+      const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const diaNum = dt.getDay();
+      if (diaNum === 6) return 'Sábado (Medio día)';
+      return dias[diaNum];
+    }
+
+    function calcularSemanaDeObra(fechaTargetStr) {
+      const [iy, im, id] = fechaInicioObra.split('-').map(Number);
+      const [ty, tm, td] = fechaTargetStr.split('-').map(Number);
+
+      const dInicio = new Date(iy, im - 1, id, 12, 0, 0);
+      const dTarget = new Date(ty, tm - 1, td, 12, 0, 0);
+
+      const dayOfWeekInicio = dInicio.getDay();
+      const diasHastaPrimerSabado = (6 - dayOfWeekInicio + 7) % 7;
+      
+      const primerSabado = new Date(dInicio.getTime());
+      primerSabado.setDate(dInicio.getDate() + diasHastaPrimerSabado);
+
+      if (dTarget <= primerSabado) {
+        return {
+          semanaNum: 1,
+          semanaNombre: "Semana 1",
+          esSemana1Incompleta: dayOfWeekInicio !== 1
+        };
+      }
+
+      const diffMs = dTarget.getTime() - primerSabado.getTime();
+      const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const semOffset = Math.ceil(diffDias / 7);
+      const semanaCalculada = 1 + semOffset;
+
+      return {
+        semanaNum: semanaCalculada,
+        semanaNombre: `Semana ${semanaCalculada}`,
+        esSemana1Incompleta: false
+      };
+    }
+
+    window.cambiarFechaInicioObra = function(nuevaFecha) {
+      if (!nuevaFecha) return;
+      fechaInicioObra = nuevaFecha;
+      const lbl = document.getElementById('label-dia-inicio-obra');
+      if (lbl) lbl.textContent = getDiaNombre(nuevaFecha);
+      saveState();
+    };
+
+    // PARALIZACIÓN Y REANUDACIÓN
+    function renderParalizacionBanner() {
+      const banner = document.getElementById('banner-paralizacion-activa');
+      const headerBadge = document.getElementById('header-estado-obra-badge');
+      const contenedorBtn = document.getElementById('btn-contenedor-paralizacion');
+      const resumenBox = document.getElementById('resumen-paralizacion-box');
+      const resumenTexto = document.getElementById('resumen-paralizacion-texto');
+      if (!banner || !headerBadge || !contenedorBtn || !resumenBox || !resumenTexto) return;
+
+      if (paralizacion && paralizacion.activa) {
+        banner.classList.remove('hidden');
+        banner.innerHTML = `
+          <div class="flex items-center justify-center gap-2">
+            <i data-lucide="alert-octagon" class="w-4 h-4 text-white"></i>
+            <span>OBRA PARALIZADA TEMPORALMENTE DESDE EL ${paralizacion.fechaInicio}. MOTIVO: ${paralizacion.motivo} ${paralizacion.detalle ? `(${paralizacion.detalle})` : ''}</span>
+            <button onclick="openModalReanudacion()" class="ml-3 underline font-black bg-rose-800 px-2.5 py-0.5 rounded hover:bg-rose-900 cursor-pointer">Reanudar Obra Ahora</button>
+          </div>
+        `;
+
+        headerBadge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+      headerBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 mr-2 animate-pulse"></span> Obra Suspendida`;
+
+      contenedorBtn.innerHTML = isAdmin ? `
+        <button onclick="openModalReanudacion()" class="admin-only px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow cursor-pointer">
+          <i data-lucide="play" class="w-4 h-4"></i> Reanudar Obra
+        </button>
+      ` : '';
+
+      resumenBox.className = "p-3 bg-rose-50 rounded-lg border border-rose-200 flex items-center gap-2.5 text-rose-800";
+      resumenTexto.innerHTML = `<strong>Suspensión Activa:</strong> Desde ${paralizacion.fechaInicio} por "${paralizacion.motivo}".`;
+    } else {
+      banner.classList.add('hidden');
+      headerBadge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+      headerBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span> Obra en Ejecución`;
+
+      contenedorBtn.innerHTML = isAdmin ? `
+        <button onclick="openModalParalizacion()" class="admin-only px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-rose-200 cursor-pointer">
+          <i data-lucide="pause-circle" class="w-4 h-4 text-rose-600"></i> Paralizar Obra
+        </button>
+      ` : '';
+
+      resumenBox.className = "p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-2.5";
+      if (paralizacion && !paralizacion.activa) {
+        resumenTexto.innerHTML = `<strong>Última reactivación:</strong> Reanudada el ${paralizacion.fechaFin} (Suspendida previamente por ${paralizacion.motivo}).`;
+      } else {
+        resumenTexto.textContent = "Obra en curso regular, sin suspensiones registradas.";
+      }
+    }
+  }
+
+    window.openModalParalizacion = function() {
+      if (!isAdmin) {
+        mostrarAviso("Solo el administrador puede suspender la obra.");
+        return;
+      }
+      const inp = document.getElementById('paraliza-fecha-inicio');
+      if (inp) inp.value = new Date().toISOString().split('T')[0];
+      const m = document.getElementById('modal-paralizacion');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+      }
+    };
+
+    window.guardarParalizacion = function() {
+      const fecha = document.getElementById('paraliza-fecha-inicio').value;
+      const motivo = document.getElementById('paraliza-motivo-select').value;
+      const detalle = document.getElementById('paraliza-motivo-detalle').value.trim();
+
+      if (!fecha) {
+        mostrarAviso("Por favor selecciona una fecha de suspensión.");
+        return;
+      }
+
+      paralizacion = {
+        activa: true,
+        fechaInicio: fecha,
+        motivo: motivo === 'OTRO' ? (detalle || 'Motivo técnico no especificado') : motivo,
+        detalle: detalle,
+        fechaFin: null
+      };
+
+      closeModal('modal-paralizacion');
+      saveState();
+    };
+
+    window.openModalReanudacion = function() {
+      if (!paralizacion) return;
+      const mot = document.getElementById('reanudar-info-motivo');
+      const des = document.getElementById('reanudar-info-desde');
+      const fec = document.getElementById('reanudacion-fecha');
+      if (mot) mot.textContent = `Motivo: ${paralizacion.motivo}`;
+      if (des) des.textContent = `Suspendida desde: ${paralizacion.fechaInicio}`;
+      if (fec) fec.value = new Date().toISOString().split('T')[0];
+      const m = document.getElementById('modal-reanudacion');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+      }
+    };
+
+    window.guardarReanudacion = function() {
+      const fechaReinicio = document.getElementById('reanudacion-fecha').value;
+      if (!fechaReinicio) {
+        mostrarAviso("Selecciona la fecha de reinicio de labores.");
+        return;
+      }
+
+      if (paralizacion) {
+        paralizacion.activa = false;
+        paralizacion.fechaFin = fechaReinicio;
+      }
+
+      closeModal('modal-reanudacion');
+      saveState();
+    };
+
+    // FINANZAS Y TOTALES
+    function calcTotales() {
+      const totalDepositos = depositos.reduce((acc, d) => acc + (d.pen || (d.usd * d.tc)), 0);
+      const totalPresupuestoMateriales = materiales.reduce((acc, m) => acc + (m.cant * m.precio), 0);
+      const totalComprasMateriales = materiales.reduce((acc, m) => {
+        let totalComp = 0;
+        Object.keys(m).forEach(k => {
+          if (k.startsWith('s') && typeof m[k] === 'number') {
+            totalComp += m[k];
+          }
+        });
+        return acc + (totalComp * m.precio);
+      }, 0);
+
+      const totalContratoNetoMO = partidasMO.reduce((acc, p) => acc + (p.cant * p.precio), 0);
+      const totalPagadoMO = pagosMO.reduce((acc, p) => acc + (p.monto || 0), 0);
+
+      const presupuestoTotalObra = totalPresupuestoMateriales + totalContratoNetoMO;
+      const totalGastos = totalComprasMateriales + totalPagadoMO;
+      const resta = totalDepositos - totalGastos;
+      const saldoTotalObraFalta = Math.max(0, presupuestoTotalObra - totalGastos);
+
+      return { 
+        totalDepositos, 
+        presupuestoTotalObra,
+        totalComprasMateriales, 
+        totalContratoNetoMO,
+        totalPagadoMO, 
+        totalGastos, 
+        resta,
+        saldoTotalObraFalta 
+      };
+    }
+
+    function renderDashboard() {
+      const { 
+        totalDepositos, 
+        presupuestoTotalObra, 
+        totalComprasMateriales,
+        totalContratoNetoMO, 
+        totalPagadoMO, 
+        totalGastos, 
+        resta, 
+        saldoTotalObraFalta 
+      } = calcTotales();
+
+      // 1. Balance General (Caja)
+      const elDep = document.getElementById('dash-deposito');
+      const elGas = document.getElementById('dash-gasto');
+      if (elDep) elDep.textContent = `S/ ${totalDepositos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elGas) elGas.textContent = `S/ ${totalGastos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+
+      // Valor Total de la Obra en el encabezado del Balance General
+      const elBalValTotal = document.getElementById('dash-balance-valor-total');
+      const elBalPctEjec = document.getElementById('dash-balance-pct-ejecutado');
+      const elBalFalta = document.getElementById('dash-balance-falta-invertir');
+      const elGasSubInfo = document.getElementById('dash-gasto-sub-info');
+      const pctDineroUsadoCalc = presupuestoTotalObra > 0 ? ((totalGastos / presupuestoTotalObra) * 100).toFixed(1) : 0;
+
+      if (elBalValTotal) elBalValTotal.textContent = `S/ ${presupuestoTotalObra.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elBalPctEjec) elBalPctEjec.textContent = `${pctDineroUsadoCalc}%`;
+      if (elBalFalta) elBalFalta.textContent = `S/ ${saldoTotalObraFalta.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elGasSubInfo) elGasSubInfo.textContent = `Compras: S/ ${totalComprasMateriales.toFixed(0)} | M.O.: S/ ${totalPagadoMO.toFixed(0)}`;
+      
+      const elResta = document.getElementById('dash-resta');
+      const elLabel = document.getElementById('dash-resta-label');
+      if (elResta && elLabel) {
+        if (resta < 0) {
+          elResta.textContent = `-S/ ${Math.abs(resta).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+          elLabel.textContent = "Dinero puesto por ti (a devolver)";
+          elLabel.className = "text-[11px] text-yellow-300 font-bold mt-0.5";
+        } else {
+          elResta.textContent = `S/ ${resta.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+          elLabel.textContent = "Saldo a favor en caja";
+          elLabel.className = "text-[11px] text-emerald-300 font-bold mt-0.5";
+        }
+      }
+
+      // 2. Avance global de jornadas
+      const elResDias = document.getElementById('dash-resumen-dias-ejecutados');
+      const elBdgTot = document.getElementById('badge-total-jornadas');
+      const elDiasPct = document.getElementById('dash-resumen-dias-pct');
+      const elBarraDias = document.getElementById('dash-barra-avance-dias');
+
+      const pctAvanceGeneral = presupuestoTotalObra > 0 ? ((totalGastos / presupuestoTotalObra) * 100).toFixed(1) : 0;
+
+      if (elResDias) elResDias.textContent = `${jornadas.length} Jornadas`;
+      if (elDiasPct) elDiasPct.textContent = `${pctAvanceGeneral}%`;
+      if (elBdgTot) elBdgTot.textContent = `${jornadas.length} Días (${pctAvanceGeneral}%)`;
+      if (elBarraDias) elBarraDias.style.width = `${pctAvanceGeneral}%`;
+
+      // Sub-pestaña: Resumen del último día registrado
+      const elUltimoFecha = document.getElementById('dash-ultimo-dia-fecha');
+      const elUltimoTexto = document.getElementById('dash-ultimo-dia-texto');
+      if (elUltimoFecha && elUltimoTexto) {
+        if (jornadas.length > 0) {
+          const sorted = [...jornadas].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+          const ultimo = sorted[sorted.length - 1];
+          const nombreDia = getDiaNombre(ultimo.fecha);
+          elUltimoFecha.textContent = `${nombreDia} (${ultimo.fecha})`;
+          elUltimoTexto.textContent = ultimo.resumen || ultimo.texto;
+        } else {
+          elUltimoFecha.textContent = "Sin registros";
+          elUltimoTexto.textContent = "Aún no se ha registrado ninguna jornada de obra.";
+        }
+      }
+
+      // 3. NUEVO MÓDULO INTEGRAL: COSTO TOTAL DE LA OBRA (MATERIALES + MANO DE OBRA)
+      // Cálculos específicos de Materiales
+      const totalPresupuestoMateriales = materiales.reduce((acc, m) => acc + (m.cant * m.precio), 0);
+      const saldoFaltaMateriales = Math.max(0, totalPresupuestoMateriales - totalComprasMateriales);
+      const pctMatComprado = totalPresupuestoMateriales > 0 ? ((totalComprasMateriales / totalPresupuestoMateriales) * 100).toFixed(1) : 0;
+      const pctMatFalta = (100 - pctMatComprado).toFixed(1);
+
+      // Cálculos específicos de Mano de Obra
+      const saldoFaltaMO = Math.max(0, totalContratoNetoMO - totalPagadoMO);
+      const pctMoPagado = totalContratoNetoMO > 0 ? ((totalPagadoMO / totalContratoNetoMO) * 100).toFixed(1) : 0;
+      const pctMoFalta = (100 - pctMoPagado).toFixed(1);
+
+      // Render Encabezado Presupuesto Maestro
+      const elGranTotalPres = document.getElementById('dash-gran-total-presupuesto');
+      if (elGranTotalPres) elGranTotalPres.textContent = `S/ ${presupuestoTotalObra.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+
+      // Render Tarjeta Materiales
+      const elMatPctBadge = document.getElementById('dash-mat-pct-badge');
+      const elMatTotalNum = document.getElementById('dash-mat-total-num');
+      const elMatGastadoNum = document.getElementById('dash-mat-gastado-num');
+      const elMatFaltaNum = document.getElementById('dash-mat-falta-num');
+      const elMatProgText = document.getElementById('dash-mat-progress-text');
+      const elMatBarComp = document.getElementById('dash-mat-bar-comprado');
+      const elMatBarFalta = document.getElementById('dash-mat-bar-falta');
+
+      if (elMatPctBadge) elMatPctBadge.textContent = `${pctMatComprado}% Comprado`;
+      if (elMatTotalNum) elMatTotalNum.textContent = `S/ ${totalPresupuestoMateriales.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elMatGastadoNum) elMatGastadoNum.textContent = `S/ ${totalComprasMateriales.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elMatFaltaNum) elMatFaltaNum.textContent = `S/ ${saldoFaltaMateriales.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elMatProgText) elMatProgText.textContent = `${pctMatComprado}% (${pctMatFalta}% por comprar)`;
+      if (elMatBarComp) elMatBarComp.style.width = `${pctMatComprado}%`;
+      if (elMatBarFalta) elMatBarFalta.style.width = `${pctMatFalta}%`;
+
+      // Render Tarjeta Mano de Obra
+      const elMoPctBadge = document.getElementById('dash-mo-pct-badge');
+      const elMoTotalNum = document.getElementById('dash-mo-total-num');
+      const elMoGastadoNum = document.getElementById('dash-mo-gastado-num');
+      const elMoFaltaNum = document.getElementById('dash-mo-falta-num');
+      const elMoProgText = document.getElementById('dash-mo-progress-text');
+      const elMoBarPag = document.getElementById('dash-mo-bar-pagado');
+      const elMoBarFalta = document.getElementById('dash-mo-bar-falta');
+
+      if (elMoPctBadge) elMoPctBadge.textContent = `${pctMoPagado}% Liquidado`;
+      if (elMoTotalNum) elMoTotalNum.textContent = `S/ ${totalContratoNetoMO.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elMoGastadoNum) elMoGastadoNum.textContent = `S/ ${totalPagadoMO.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elMoFaltaNum) elMoFaltaNum.textContent = `S/ ${saldoFaltaMO.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elMoProgText) elMoProgText.textContent = `${pctMoPagado}% (${pctMoFalta}% por liquidar)`;
+      if (elMoBarPag) elMoBarPag.style.width = `${pctMoPagado}%`;
+      if (elMoBarFalta) elMoBarFalta.style.width = `${pctMoFalta}%`;
+    }
+
+    // TABLA EXCEL COMPRAS
+    window.setModoTabla = function(modo) {
+      modoTablaActual = modo;
+      actualizarBotonesVistas();
+      renderTablaExcel();
+    };
+
+    function actualizarBotonesVistas() {
+      const contenedor = document.getElementById('contenedor-filtros-vistas');
+      if (!contenedor) return;
+
+      // Obtener todas las semanas registradas dinámicamente en los materiales
+      const semanasSet = new Set(['s1', 's2', 's3']);
+      materiales.forEach(m => {
+        Object.keys(m).forEach(k => {
+          if (k.startsWith('s') && !isNaN(Number(k.slice(1)))) {
+            semanasSet.add(k);
+          }
+        });
+      });
+
+      const semanasArr = Array.from(semanasSet).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
+
+      let html = `
+        <button onclick="setModoTabla('presupuesto')" id="btn-vista-presupuesto" class="${modoTablaActual === 'presupuesto' ? 'bg-slate-800 text-white' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'} px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Lista Maestra / Presupuesto</button>
+      `;
+
+      semanasArr.forEach(semKey => {
+        const numSem = semKey.slice(1);
+        const subtotalSem = materiales.reduce((acc, m) => acc + ((m[semKey] || 0) * m.precio), 0);
+        const esActivo = modoTablaActual === semKey;
+        html += `
+          <button onclick="setModoTabla('${semKey}')" id="btn-vista-${semKey}" class="${esActivo ? 'bg-slate-800 text-white' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'} px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Avance S${numSem} (${subtotalSem.toFixed(1).replace('.', ',')})</button>
+        `;
+      });
+
+      html += `
+        <button onclick="setModoTabla('pendientes')" id="btn-vista-pendientes" class="${modoTablaActual === 'pendientes' ? 'bg-slate-800 text-white' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'} px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 cursor-pointer">Solo lo que Falta Comprar</button>
+      `;
+
+      contenedor.innerHTML = html;
+    }
+
+    function renderTablaExcel() {
+      const tbody = document.getElementById('tabla-excel-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const categorias = ["ACERO", "ADICIONALES", "LADRILLOS", "ELECTRICAS", "SANITARIAS", "MIXER"];
+      let sumaTotalGeneral = 0;
+
+      categorias.forEach(catKey => {
+        const items = materiales.filter(m => m.cat === catKey);
+        if (items.length === 0) return;
+
+        const itemsProcesados = items.map(m => {
+          let cantMostrar = 0;
+          if (modoTablaActual === 'presupuesto') {
+            cantMostrar = m.cant;
+          } else if (modoTablaActual === 'pendientes') {
+            let comprado = 0;
+            Object.keys(m).forEach(k => {
+              if (k.startsWith('s') && typeof m[k] === 'number') comprado += m[k];
+            });
+            cantMostrar = Math.max(0, m.cant - comprado);
+          } else if (modoTablaActual.startsWith('s')) {
+            cantMostrar = m[modoTablaActual] || 0;
+          }
+          const costoMostrar = cantMostrar * m.precio;
+          return { ...m, cantMostrar, costoMostrar };
+        });
+
+        const itemsVisibles = (modoTablaActual === 'presupuesto') 
+          ? itemsProcesados 
+          : itemsProcesados.filter(i => i.cantMostrar > 0.001);
+
+        if (itemsVisibles.length === 0 && modoTablaActual !== 'presupuesto') return;
+
+        const subtotalCat = itemsVisibles.reduce((acc, i) => acc + i.costoMostrar, 0);
+        sumaTotalGeneral += subtotalCat;
+
+        const catConfig = CATEGORIAS_CONFIG[catKey] || { colorBg: "bg-slate-200 text-slate-900 border-slate-300" };
+        const trSubHeader = document.createElement('tr');
+        trSubHeader.className = `${catConfig.colorBg} font-bold border-y-2 border-slate-300`;
+        trSubHeader.innerHTML = `
+          <td colspan="4" class="p-2 tracking-wide font-sans">${catKey}</td>
+          <td class="p-2 text-right font-black font-mono text-sm">${subtotalCat.toFixed(1).replace('.', ',')}</td>
+        `;
+        tbody.appendChild(trSubHeader);
+
+        itemsVisibles.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-amber-50/50 bg-white";
+          tr.innerHTML = `
+            <td class="p-2 pl-6 font-sans text-slate-800 border-r border-slate-100">${item.nombre}</td>
+            <td class="p-2 text-center text-slate-600 border-r border-slate-100">${item.und}</td>
+            <td class="p-2 text-right text-slate-900 border-r border-slate-100">${item.cantMostrar}</td>
+            <td class="p-2 text-right text-slate-900 border-r border-slate-100">${item.precio.toFixed(1).replace('.', ',')}</td>
+            <td class="p-2 text-right font-bold text-slate-900">${item.costoMostrar.toFixed(1).replace('.', ',')}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+
+      const elCompTot = document.getElementById('comp-total-general');
+      if (elCompTot) elCompTot.textContent = sumaTotalGeneral.toFixed(1).replace('.', ',');
+    }
+
+    // REGISTRO DE COMPRAS INTELIGENTE POR FECHA Y PENDIENTES
+    let currentCompraSemKey = 's1';
+
+    window.openModalRegistroCompra = function() {
+      const hoy = new Date().toISOString().split('T')[0];
+      const inputFecha = document.getElementById('compra-input-fecha');
+      if (inputFecha) {
+        inputFecha.value = hoy;
+        onCompraFechaChange(hoy);
+      }
+      renderDisplayMaterialesPendientesCompra();
+      const m = document.getElementById('modal-registro-compra');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    window.onCompraFechaChange = function(fechaStr) {
+      if (!fechaStr) return;
+      const infoSem = calcularSemanaDeObra(fechaStr);
+      const diaNombre = getDiaNombre(fechaStr);
+      currentCompraSemKey = `s${infoSem.semanaNum}`;
+
+      const elSem = document.getElementById('compra-auto-semana-label');
+      const elDia = document.getElementById('compra-auto-dia-label');
+      if (elSem) elSem.textContent = `${infoSem.semanaNombre} (${currentCompraSemKey.toUpperCase()})`;
+      if (elDia) elDia.textContent = diaNombre;
+    };
+
+    function renderDisplayMaterialesPendientesCompra() {
+      const display = document.getElementById('lista-compras-pendientes-display');
+      if (!display) return;
+      display.innerHTML = '';
+
+      const categorias = ["ACERO", "ADICIONALES", "LADRILLOS", "ELECTRICAS", "SANITARIAS", "MIXER"];
+      let hayPendientes = false;
+
+      categorias.forEach(catKey => {
+        const items = materiales.filter(m => m.cat === catKey);
+        const itemsConPendiente = items.map(m => {
+          let comprado = 0;
+          Object.keys(m).forEach(k => {
+            if (k.startsWith('s') && typeof m[k] === 'number') comprado += m[k];
+          });
+          const falta = Math.max(0, m.cant - comprado);
+          return { ...m, falta };
+        }).filter(m => m.falta > 0.001);
+
+        if (itemsConPendiente.length === 0) return;
+        hayPendientes = true;
+
+        const catConfig = CATEGORIAS_CONFIG[catKey] || { colorBg: "bg-slate-200 text-slate-800" };
+        const grp = document.createElement('div');
+        grp.className = "bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs space-y-2";
+        grp.innerHTML = `
+          <div class="flex justify-between items-center px-1 border-b border-slate-100 pb-1">
+            <span class="font-bold text-slate-700 tracking-wide">${catKey}</span>
+            <span class="text-[11px] text-slate-400 font-normal">Precio Unit. Ref.</span>
+          </div>
+          <div class="space-y-1.5">
+            ${itemsConPendiente.map(item => `
+              <div class="flex items-center justify-between gap-3 p-1 rounded hover:bg-slate-50">
+                <div class="flex-1">
+                  <span class="font-medium text-slate-800">${item.nombre}</span>
+                  <span class="text-slate-400 text-[11px] block">Falta comprar: <strong class="text-rose-600 font-bold">${item.falta} ${item.und}</strong> (S/ ${item.precio.toFixed(2)} c/u)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" 
+                    id="input-compra-item-${item.id}" 
+                    data-id="${item.id}" 
+                    data-precio="${item.precio}" 
+                    data-max="${item.falta}" 
+                    placeholder="0" 
+                    step="any" 
+                    min="0" 
+                    max="${item.falta}" 
+                    oninput="recalcularPreviewCompra()" 
+                    class="input-compra-cant w-24 p-1.5 text-right font-mono font-bold text-slate-900 border rounded focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50">
+                  <span class="text-slate-500 text-[11px] w-8">${item.und}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        display.appendChild(grp);
+      });
+
+      if (!hayPendientes) {
+        display.innerHTML = `
+          <div class="p-6 text-center text-slate-400">
+            <i data-lucide="check-check" class="w-8 h-8 text-emerald-500 mx-auto mb-2"></i>
+            <p class="font-semibold text-emerald-800">¡Todos los materiales presupuestados han sido adquiridos al 100%!</p>
+            <p class="text-[11px] text-slate-500 mt-1">Si necesitas comprar más cantidades o materiales imprevistos, utiliza "+ Agregar Material".</p>
+          </div>
+        `;
+      }
+      recalcularPreviewCompra();
+    }
+
+    window.recalcularPreviewCompra = function() {
+      const inputs = document.querySelectorAll('.input-compra-cant');
+      let totalPreview = 0;
+      inputs.forEach(inp => {
+        const cant = parseFloat(inp.value) || 0;
+        const precio = parseFloat(inp.getAttribute('data-precio')) || 0;
+        totalPreview += (cant * precio);
+      });
+      const elPrev = document.getElementById('compra-monto-estimado-preview');
+      if (elPrev) {
+        elPrev.textContent = `S/ ${totalPreview.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      }
+    };
+
+    window.guardarRegistroCompra = function() {
+      const fecha = document.getElementById('compra-input-fecha').value;
+      if (!fecha) {
+        mostrarAviso("Selecciona la fecha de compra.");
+        return;
+      }
+
+      const infoSem = calcularSemanaDeObra(fecha);
+      const semKey = `s${infoSem.semanaNum}`;
+      const inputs = document.querySelectorAll('.input-compra-cant');
+      let compradosCount = 0;
+      let totalMontoCompra = 0;
+
+      inputs.forEach(inp => {
+        const cant = parseFloat(inp.value) || 0;
+        if (cant > 0) {
+          const id = parseInt(inp.getAttribute('data-id'), 10);
+          const mat = materiales.find(m => m.id === id);
+          if (mat) {
+            mat[semKey] = (mat[semKey] || 0) + cant;
+            totalMontoCompra += (cant * mat.precio);
+            compradosCount++;
+          }
+        }
+      });
+
+      if (compradosCount === 0) {
+        mostrarAviso("Ingresa la cantidad comprada al menos en uno de los materiales de la lista.");
+        return;
+      }
+
+      closeModal('modal-registro-compra');
+      saveState();
+      actualizarBotonesVistas();
+      setModoTabla(semKey);
+      mostrarAviso(`Compra registrada con éxito en ${infoSem.semanaNombre} por un monto de S/ ${totalMontoCompra.toLocaleString('es-PE', { minimumFractionDigits: 2 })}.`, "Compra Guardada");
+    };
+
+    function renderTablaExcel() {
+      const tbody = document.getElementById('tabla-excel-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const categorias = ["ACERO", "ADICIONALES", "LADRILLOS", "ELECTRICAS", "SANITARIAS", "MIXER"];
+      let sumaTotalGeneral = 0;
+
+      categorias.forEach(catKey => {
+        const items = materiales.filter(m => m.cat === catKey);
+        if (items.length === 0) return;
+
+        const itemsProcesados = items.map(m => {
+          let cantMostrar = 0;
+          if (modoTablaActual === 'presupuesto') {
+            cantMostrar = m.cant;
+          } else if (modoTablaActual === 's1') {
+            cantMostrar = m.s1 || 0;
+          } else if (modoTablaActual === 's2') {
+            cantMostrar = m.s2 || 0;
+          } else if (modoTablaActual === 's3') {
+            cantMostrar = m.s3 || 0;
+          } else if (modoTablaActual === 'pendientes') {
+            const comprado = (m.s1 || 0) + (m.s2 || 0) + (m.s3 || 0);
+            cantMostrar = Math.max(0, m.cant - comprado);
+          }
+          const costoMostrar = cantMostrar * m.precio;
+          return { ...m, cantMostrar, costoMostrar };
+        });
+
+        const itemsVisibles = (modoTablaActual === 'presupuesto') 
+          ? itemsProcesados 
+          : itemsProcesados.filter(i => i.cantMostrar > 0.001);
+
+        if (itemsVisibles.length === 0 && modoTablaActual !== 'presupuesto') return;
+
+        const subtotalCat = itemsVisibles.reduce((acc, i) => acc + i.costoMostrar, 0);
+        sumaTotalGeneral += subtotalCat;
+
+        const catConfig = CATEGORIAS_CONFIG[catKey] || { colorBg: "bg-slate-200 text-slate-900 border-slate-300" };
+        const trSubHeader = document.createElement('tr');
+        trSubHeader.className = `${catConfig.colorBg} font-bold border-y-2 border-slate-300`;
+        trSubHeader.innerHTML = `
+          <td colspan="4" class="p-2 tracking-wide font-sans">${catKey}</td>
+          <td class="p-2 text-right font-black font-mono text-sm">${subtotalCat.toFixed(1).replace('.', ',')}</td>
+        `;
+        tbody.appendChild(trSubHeader);
+
+        itemsVisibles.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-amber-50/50 bg-white";
+          tr.innerHTML = `
+            <td class="p-2 pl-6 font-sans text-slate-800 border-r border-slate-100">${item.nombre}</td>
+            <td class="p-2 text-center text-slate-600 border-r border-slate-100">${item.und}</td>
+            <td class="p-2 text-right text-slate-900 border-r border-slate-100">${item.cantMostrar}</td>
+            <td class="p-2 text-right text-slate-900 border-r border-slate-100">${item.precio.toFixed(1).replace('.', ',')}</td>
+            <td class="p-2 text-right font-bold text-slate-900">${item.costoMostrar.toFixed(1).replace('.', ',')}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+
+      const elCompTot = document.getElementById('comp-total-general');
+      if (elCompTot) elCompTot.textContent = sumaTotalGeneral.toFixed(1).replace('.', ',');
+    }
+
+    // AVANCE DE OBRA
+    function extractKeywords(text) {
+      const dict = [
+        { word: 'viga', tag: 'Vigas' },
+        { word: 'peraltada', tag: 'VigaPeraltada' },
+        { word: 'chata', tag: 'VigaChata' },
+        { word: 'encofrado', tag: 'Encofrado' },
+        { word: 'estribo', tag: 'Estribos' },
+        { word: 'acero', tag: 'Acero' },
+        { word: 'ladrillo', tag: 'Ladrillos' },
+        { word: 'escalera', tag: 'Escalera' },
+        { word: 'tragaluz', tag: 'Tragaluz' },
+        { word: 'tubo', tag: 'Sanitarias' },
+        { word: 'luz', tag: 'Eléctricas' },
+        { word: 'paño', tag: 'PañoLosa' },
+        { word: 'limpieza', tag: 'Limpieza' },
+        { word: 'madera', tag: 'Madera' },
+        { word: 'concreto', tag: 'Concreto' },
+        { word: 'vaciado', tag: 'Vaciado' }
+      ];
+
+      const lower = text.toLowerCase();
+      const tags = [];
+      dict.forEach(item => {
+        if (lower.includes(item.word)) tags.push(item.tag);
+      });
+
+      if (tags.length === 0) tags.push("AvanceCampo", "Albañilería");
+      return tags;
+    }
+
+    function renderAvanceDeObra() {
+      const container = document.getElementById('semanas-display-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const jornadasOrdenadas = [...jornadas].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+      const gruposPorSemana = {};
+
+      jornadasOrdenadas.forEach(j => {
+        const infoSem = calcularSemanaDeObra(j.fecha);
+        const semKey = `sem-${infoSem.semanaNum}`;
+
+        if (!gruposPorSemana[semKey]) {
+          gruposPorSemana[semKey] = {
+            num: infoSem.semanaNum,
+            nombre: infoSem.semanaNombre,
+            dias: []
+          };
+        }
+        gruposPorSemana[semKey].dias.push(j);
+      });
+
+      const listaSemanas = Object.values(gruposPorSemana).sort((a, b) => a.num - b.num);
+
+      if (listaSemanas.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-400">
+            <i data-lucide="calendar-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+            <p class="text-sm font-medium">No hay jornadas registradas. Presiona "+ Registrar Avance del Día" para comenzar.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listaSemanas.forEach((sem, idx) => {
+        const isLatest = idx === listaSemanas.length - 1;
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden";
+
+        card.innerHTML = `
+          <div onclick="toggleSemanaDisplay('sem-grp-${sem.num}')" class="p-4 bg-slate-50 hover:bg-slate-100 cursor-pointer flex items-center justify-between border-b border-slate-200 transition-colors select-none">
+            <div class="flex items-center space-x-3">
+              <span class="p-2 bg-amber-500 text-slate-950 rounded-lg">
+                <i data-lucide="folder-kanban" class="w-5 h-5"></i>
+              </span>
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm tracking-tight">${sem.nombre} (Cierre en Sábado)</h4>
+                <p class="text-xs text-slate-500">${sem.dias.length} jornadas de trabajo registradas</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-3">
+              <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono font-semibold">${sem.dias.length} Días</span>
+              <i data-lucide="chevron-down" id="icon-chevron-sem-grp-${sem.num}" class="w-5 h-5 text-slate-400 transform transition-transform ${isLatest ? 'rotate-180' : ''}"></i>
+            </div>
+          </div>
+
+          <div id="display-sem-grp-${sem.num}" class="${isLatest ? 'block' : 'hidden'} p-4 space-y-3 bg-slate-50/50">
+            ${sem.dias.map(d => {
+              const diaNombre = getDiaNombre(d.fecha);
+              return `
+                <div class="p-3.5 bg-white rounded-lg border border-slate-200 shadow-2xs space-y-2">
+                  <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-amber-800 uppercase bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        ${diaNombre} (${d.fecha})
+                      </span>
+                    </div>
+                    ${isAdmin ? `
+                    <div class="flex items-center gap-1.5">
+                      <button onclick="openModalEditarDia(${d.id})" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editar
+                      </button>
+                      <button onclick="eliminarDiaJornada(${d.id})" title="Eliminar jornada" class="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                    ` : ''}
+                  </div>
+
+                  <div class="text-xs text-slate-800 leading-relaxed">
+                    <span class="font-semibold text-slate-600">Avance de obra:</span> ${d.texto}
+                  </div>
+
+                  <div class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-100">
+                    <span class="font-bold text-slate-700">Resumen ejecutivo:</span> ${d.resumen}
+                  </div>
+
+                  <div class="flex flex-wrap gap-1 pt-1">
+                    ${(d.tags || []).map(t => `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded">#${t}</span>`).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    window.toggleSemanaDisplay = function(grpId) {
+      const display = document.getElementById(`display-${grpId}`);
+      const chevron = document.getElementById(`icon-chevron-${grpId}`);
+      if (!display || !chevron) return;
+      if (display.classList.contains('hidden')) {
+        display.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+      } else {
+        display.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+      }
+    };
+
+    window.onCalendarioFechaChange = function(fechaStr, modo = 'nuevo') {
+      if (!fechaStr) return;
+      const infoSem = calcularSemanaDeObra(fechaStr);
+      const diaNombre = getDiaNombre(fechaStr);
+
+      const [y, m, d] = fechaStr.split('-').map(Number);
+      const dt = new Date(y, m - 1, d, 12, 0, 0);
+      const esDomingo = dt.getDay() === 0;
+
+      if (modo === 'nuevo') {
+        const elSem = document.getElementById('cal-auto-semana-label');
+        const elDia = document.getElementById('cal-auto-dia-label');
+        const aviso = document.getElementById('cal-aviso-domingo');
+        if (elSem) elSem.textContent = infoSem.semanaNombre;
+        if (elDia) elDia.textContent = diaNombre;
+        if (aviso) {
+          if (esDomingo) aviso.classList.remove('hidden'); else aviso.classList.add('hidden');
+        }
+      } else {
+        const elSem = document.getElementById('edit-auto-semana-label');
+        const elDia = document.getElementById('edit-auto-dia-label');
+        const aviso = document.getElementById('edit-aviso-domingo');
+        if (elSem) elSem.textContent = infoSem.semanaNombre;
+        if (elDia) elDia.textContent = diaNombre;
+        if (aviso) {
+          if (esDomingo) aviso.classList.remove('hidden'); else aviso.classList.add('hidden');
+        }
+      }
+    };
+
+    window.openModalRegistroDiarioCalendario = function() {
+      const hoy = new Date().toISOString().split('T')[0];
+      const inputFecha = document.getElementById('cal-input-fecha');
+      if (inputFecha) {
+        inputFecha.value = hoy;
+        onCalendarioFechaChange(hoy, 'nuevo');
+      }
+      const desc = document.getElementById('cal-input-descripcion');
+      if (desc) desc.value = '';
+      const m = document.getElementById('modal-registro-diario-cal');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+      }
+    };
+
+    window.guardarAvanceCalendario = function() {
+      const fecha = document.getElementById('cal-input-fecha').value;
+      const desc = document.getElementById('cal-input-descripcion').value.trim();
+
+      if (!fecha || !desc) {
+        mostrarAviso("Por favor selecciona una fecha e ingresa la descripción del avance.");
+        return;
+      }
+
+      const tags = extractKeywords(desc);
+      const nuevaJornada = {
+        id: Date.now(),
+        fecha: fecha,
+        texto: desc,
+        resumen: `Ejecución de labores vinculadas a ${tags.join(', ')}.`,
+        tags: tags
+      };
+
+      jornadas.push(nuevaJornada);
+      closeModal('modal-registro-diario-cal');
+      saveState();
+    };
+
+    window.openModalEditarDia = function(id) {
+      const jornada = jornadas.find(j => j.id === id);
+      if (!jornada) return;
+
+      const elId = document.getElementById('edit-dia-id');
+      const elFec = document.getElementById('edit-input-fecha');
+      const elDesc = document.getElementById('edit-input-descripcion');
+      if (elId) elId.value = jornada.id;
+      if (elFec) elFec.value = jornada.fecha;
+      if (elDesc) elDesc.value = jornada.texto;
+
+      onCalendarioFechaChange(jornada.fecha, 'edit');
+
+      const m = document.getElementById('modal-editar-dia');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    window.guardarEdicionDia = function() {
+      const id = parseInt(document.getElementById('edit-dia-id').value, 10);
+      const nuevaFecha = document.getElementById('edit-input-fecha').value;
+      const nuevoTexto = document.getElementById('edit-input-descripcion').value.trim();
+
+      if (!nuevaFecha || !nuevoTexto) {
+        mostrarAviso("La fecha y la descripción no pueden estar vacías.");
+        return;
+      }
+
+      const jornadaIdx = jornadas.findIndex(j => j.id === id);
+      if (jornadaIdx === -1) return;
+
+      const tags = extractKeywords(nuevoTexto);
+      jornadas[jornadaIdx].fecha = nuevaFecha;
+      jornadas[jornadaIdx].texto = nuevoTexto;
+      jornadas[jornadaIdx].tags = tags;
+      jornadas[jornadaIdx].resumen = `Trabajos actualizados correspondientes a ${tags.join(', ')}.`;
+
+      closeModal('modal-editar-dia');
+      saveState();
+    };
+
+    window.eliminarDiaJornada = function(id) {
+      mostrarConfirmacion("¿Estás seguro de eliminar el registro de esta jornada?", () => {
+        jornadas = jornadas.filter(j => j.id !== id);
+        saveState();
+      }, "Eliminar Jornada");
+    };
+
+    // MANO DE OBRA
+    function renderManoObra() {
+      const tbodyPartidas = document.getElementById('mo-partidas-tbody');
+      if (!tbodyPartidas) return;
+      tbodyPartidas.innerHTML = '';
+      let totalNetoMO = 0;
+
+      partidasMO.forEach(p => {
+        const costo = p.cant * p.precio;
+        totalNetoMO += costo;
+        const tr = document.createElement('tr');
+        if (p.esDescuento) {
+          tr.className = "bg-rose-50 text-rose-800 font-sans";
+          tr.innerHTML = `
+            <td class="p-2">${p.elemento}</td>
+            <td class="p-2 text-center">${p.und}</td>
+            <td class="p-2 text-right">-</td>
+            <td class="p-2 text-right">-</td>
+            <td class="p-2 text-right font-bold font-mono">${costo.toFixed(0)}</td>
+            <td class="p-2 text-center"></td>
+          `;
+        } else {
+          tr.className = "hover:bg-slate-50";
+          tr.innerHTML = `
+            <td class="p-2 font-sans font-medium text-slate-900">${p.elemento}</td>
+            <td class="p-2 text-center text-slate-600">${p.und}</td>
+            <td class="p-2 text-right text-slate-900">${p.cant}</td>
+            <td class="p-2 text-right text-slate-900">${p.precio}</td>
+            <td class="p-2 text-right font-bold text-slate-900">${costo.toFixed(0)}</td>
+            <td class="p-2 text-center">
+              ${(!p.fijo && isAdmin) ? `<button onclick="eliminarPartidaMO(${p.id})" title="Eliminar partida" class="text-slate-400 hover:text-rose-600 p-0.5 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+            </td>
+          `;
+        }
+        tbodyPartidas.appendChild(tr);
+      });
+
+      const trTotal = document.createElement('tr');
+      trTotal.className = "bg-amber-100 text-amber-950 font-black";
+      trTotal.innerHTML = `
+        <td colspan="4" class="p-2 font-sans uppercase">TOTAL MANO DE OBRA NETO</td>
+        <td class="p-2 text-right font-mono">${totalNetoMO.toFixed(0)}</td>
+        <td></td>
+      `;
+      tbodyPartidas.appendChild(trTotal);
+
+      const tbodyPagos = document.getElementById('mo-tbody');
+      if (!tbodyPagos) return;
+      tbodyPagos.innerHTML = '';
+      let totalPagado = 0;
+
+      pagosMO.forEach(p => {
+        totalPagado += (p.monto || 0);
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50";
+        tr.innerHTML = `
+          <td class="p-2 font-bold text-slate-900">${p.semana}</td>
+          <td class="p-2 font-sans text-slate-600">${p.detalle || 'Pago cuadrilla albañiles'}</td>
+          <td class="p-2 text-right font-black text-slate-900">${p.monto > 0 ? p.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 }) : '-'}</td>
+          <td class="p-2 text-center">
+            ${p.monto > 0 
+              ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded">Pagado</span>` 
+              : `<span class="bg-slate-100 text-slate-500 text-[10px] font-semibold px-2 py-0.5 rounded">Pendiente</span>`}
+          </td>
+          <td class="p-2 text-center">
+            ${(pagosMO.length > 3 && p.id && isAdmin) ? `<button onclick="eliminarPagoMO(${p.id})" title="Eliminar pago" class="text-slate-400 hover:text-rose-600 p-0.5 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+          </td>
+        `;
+        tbodyPagos.appendChild(tr);
+      });
+
+      const saldoPendienteMO = Math.max(0, totalNetoMO - totalPagado);
+      const elSalMO = document.getElementById('mo-saldo-pendiente');
+      if (elSalMO) elSalMO.textContent = `S/ ${saldoPendienteMO.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+    }
+
+    window.openModalPartidaMO = function() {
+      const m = document.getElementById('modal-partida-mo');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+      }
+    };
+
+    window.guardarPartidaMO = function() {
+      const elemento = document.getElementById('new-mo-elemento').value.trim();
+      const und = document.getElementById('new-mo-und').value.trim().toUpperCase() || 'UND';
+      const cant = parseFloat(document.getElementById('new-mo-cant').value) || 0;
+      const precio = parseFloat(document.getElementById('new-mo-precio').value) || 0;
+
+      if (!elemento || cant <= 0) {
+        mostrarAviso("Por favor completa el nombre del elemento y una cantidad válida.");
+        return;
+      }
+
+      const idxDescuento = partidasMO.findIndex(p => p.esDescuento);
+      const nuevaPartida = {
+        id: Date.now(),
+        elemento: elemento,
+        und: und,
+        cant: cant,
+        precio: precio,
+        fijo: false
+      };
+
+      if (idxDescuento !== -1) {
+        partidasMO.splice(idxDescuento, 0, nuevaPartida);
+      } else {
+        partidasMO.push(nuevaPartida);
+      }
+
+      closeModal('modal-partida-mo');
+      document.getElementById('new-mo-elemento').value = '';
+      saveState();
+    };
+
+    window.eliminarPartidaMO = function(id) {
+      mostrarConfirmacion("¿Deseas eliminar este apartado de mano de obra?", () => {
+        partidasMO = partidasMO.filter(p => p.id !== id);
+        saveState();
+      }, "Eliminar Partida");
+    };
+
+    window.openModalNuevoPagoMO = function() {
+      const siguienteSemanaNum = pagosMO.length + 1;
+      const elSem = document.getElementById('new-pago-sem');
+      const elDet = document.getElementById('new-pago-detalle');
+      const elMon = document.getElementById('new-pago-monto');
+      if (elSem) elSem.value = `S${siguienteSemanaNum}`;
+      if (elDet) elDet.value = `Pago Semana ${siguienteSemanaNum} cuadrilla`;
+      if (elMon) elMon.value = '';
+      const m = document.getElementById('modal-nuevo-pago-mo');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+      }
+    };
+
+    window.guardarNuevoPagoMO = function() {
+      const semana = document.getElementById('new-pago-sem').value.trim() || `S${pagosMO.length + 1}`;
+      const detalle = document.getElementById('new-pago-detalle').value.trim() || 'Pago semanal';
+      const monto = parseFloat(document.getElementById('new-pago-monto').value);
+
+      if (isNaN(monto) || monto <= 0) {
+        mostrarAviso("Por favor ingresa un monto válido de pago.");
+        return;
+      }
+
+      pagosMO.push({
+        id: Date.now(),
+        semana: semana,
+        detalle: detalle,
+        monto: monto
+      });
+
+      closeModal('modal-nuevo-pago-mo');
+      saveState();
+    };
+
+    window.eliminarPagoMO = function(id) {
+      mostrarConfirmacion("¿Deseas eliminar este registro de pago?", () => {
+        pagosMO = pagosMO.filter(p => p.id !== id);
+        saveState();
+      }, "Eliminar Pago");
+    };
+
+    // TRANSFERENCIAS
+    function renderFinanzas() {
+      const tbody = document.getElementById('depositos-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      let totalUSD = 0;
+
+      depositos.forEach(d => {
+        totalUSD += d.usd;
+        const pen = d.pen || (d.usd * d.tc);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2.5 font-medium">${d.fecha}</td>
+          <td class="p-2.5 text-slate-600 font-sans">${d.tipo}</td>
+          <td class="p-2.5 text-right font-bold text-blue-700">${d.usd.toLocaleString('en-US')} x ${d.tc.toFixed(1).replace('.', ',')}</td>
+          <td class="p-2.5 text-right font-mono">${d.tc.toFixed(2)}</td>
+          <td class="p-2.5 text-right font-black text-slate-900 font-mono">${pen.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const { totalDepositos, totalGastos, resta } = calcTotales();
+      const elDep = document.getElementById('fin-total-deposito');
+      const elSubUsd = document.getElementById('fin-subtotal-usd');
+      const elGas = document.getElementById('fin-total-gasto');
+      if (elDep) elDep.textContent = `S/ ${totalDepositos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      if (elSubUsd) elSubUsd.textContent = `$${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD cambiados`;
+      if (elGas) elGas.textContent = `S/ ${totalGastos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+      
+      const elResta = document.getElementById('fin-total-resta');
+      const elLabel = document.getElementById('fin-estado-resta-label');
+      if (elResta && elLabel) {
+        if (resta < 0) {
+          elResta.textContent = `-S/ ${Math.abs(resta).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+          elResta.className = "text-2xl font-black mt-1 text-yellow-300 font-mono";
+          elLabel.textContent = "Dinero adelantado (por cobrar)";
+        } else {
+          elResta.textContent = `S/ ${resta.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+          elResta.className = "text-2xl font-black mt-1 text-emerald-300 font-mono";
+          elLabel.textContent = "Saldo a favor en caja";
+        }
+      }
+    }
+
+    window.openModalDeposito = function() {
+      const modalDep = document.getElementById('modal-nuevo-deposito');
+      if (modalDep) {
+        modalDep.classList.remove('modal-hidden');
+        modalDep.classList.add('modal-visible');
+      }
+    };
+
+    window.guardarNuevoDeposito = function() {
+      const valUSD = parseFloat(document.getElementById('dep-input-usd').value);
+      const valTC = parseFloat(document.getElementById('dep-input-tc').value) || 3.40;
+      const fecha = document.getElementById('dep-input-fecha').value.trim() || new Date().toLocaleDateString('es-PE');
+
+      if (isNaN(valUSD) || valUSD <= 0) {
+        mostrarAviso("Ingresa un monto válido en dólares.");
+        return;
+      }
+
+      depositos.push({
+        id: Date.now(),
+        fecha: fecha,
+        tipo: "TRANSFEENCIA",
+        usd: valUSD,
+        tc: valTC,
+        pen: valUSD * valTC
+      });
+
+      closeModal('modal-nuevo-deposito');
+      document.getElementById('dep-input-usd').value = '';
+      saveState();
+    };
+
+    // GESTIÓN DE MATERIALES (EDITAR EXISTENTES Y AGREGAR NUEVOS)
+    window.openModalGestionMateriales = function() {
+      const m = document.getElementById('modal-material');
+      if (m) {
+        m.classList.remove('modal-hidden');
+        m.classList.add('modal-visible');
+        renderListaGestionMateriales();
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    // Alias retrocompatible
+    window.openModalMaterial = window.openModalGestionMateriales;
+
+    window.renderListaGestionMateriales = function() {
+      const contenedor = document.getElementById('contenedor-gestion-materiales-lista');
+      if (!contenedor) return;
+      contenedor.innerHTML = '';
+
+      const busqueda = (document.getElementById('filtro-gestion-mat-text')?.value || '').toLowerCase().trim();
+      const catFiltro = document.getElementById('filtro-gestion-mat-cat')?.value || 'TODOS';
+
+      const categorias = ["ACERO", "ADICIONALES", "LADRILLOS", "ELECTRICAS", "SANITARIAS", "MIXER"];
+
+      categorias.forEach(catKey => {
+        if (catFiltro !== 'TODOS' && catFiltro !== catKey) return;
+
+        let items = materiales.filter(m => m.cat === catKey);
+        if (busqueda) {
+          items = items.filter(m => m.nombre.toLowerCase().includes(busqueda));
+        }
+
+        if (items.length === 0) return;
+
+        const catConfig = CATEGORIAS_CONFIG[catKey] || { colorBg: "bg-slate-200 text-slate-800" };
+        const box = document.createElement('div');
+        box.className = "bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-2";
+
+        box.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-100 pb-1.5">
+            <span class="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> ${catKey} (${items.length} items)
+            </span>
+            <span class="text-[11px] text-slate-400 font-medium">Subtotal Presupuestado</span>
+          </div>
+          <div class="space-y-1.5 text-xs">
+            ${items.map(m => {
+              const subtotalItem = m.cant * m.precio;
+              return `
+                <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-slate-50 border border-slate-100">
+                  <div class="flex-1 min-w-[180px]">
+                    <input type="text" 
+                      value="${m.nombre}" 
+                      onchange="actualizarDatoMaterial(${m.id}, 'nombre', this.value)" 
+                      class="w-full font-semibold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-white focus:outline-none px-1 py-0.5 rounded text-xs">
+                    <span class="text-[10px] text-slate-400 block px-1">ID: ${m.id} | Subtotal: <strong class="font-mono text-slate-700">S/ ${subtotalItem.toFixed(2)}</strong></span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-1">
+                      <span class="text-[10px] text-slate-500 font-semibold">Und:</span>
+                      <input type="text" 
+                        value="${m.und}" 
+                        onchange="actualizarDatoMaterial(${m.id}, 'und', this.value.toUpperCase())" 
+                        class="w-14 p-1 text-center uppercase font-mono font-bold text-slate-700 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <span class="text-[10px] text-slate-500 font-semibold">Cant:</span>
+                      <input type="number" 
+                        value="${m.cant}" 
+                        step="any" 
+                        min="0" 
+                        onchange="actualizarDatoMaterial(${m.id}, 'cant', this.value)" 
+                        class="w-20 p-1 text-right font-mono font-bold text-slate-900 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <span class="text-[10px] text-slate-500 font-semibold">S/:</span>
+                      <input type="number" 
+                        value="${m.precio}" 
+                        step="any" 
+                        min="0" 
+                        onchange="actualizarDatoMaterial(${m.id}, 'precio', this.value)" 
+                        class="w-20 p-1 text-right font-mono font-bold text-emerald-700 border rounded bg-slate-50 focus:bg-white focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                    </div>
+
+                    <button onclick="eliminarMaterialCatalogo(${m.id})" title="Eliminar material" class="p-1 text-slate-300 hover:text-rose-600 transition-colors cursor-pointer rounded ml-1">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        contenedor.appendChild(box);
+      });
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    window.actualizarDatoMaterial = function(id, campo, valor) {
+      const mat = materiales.find(m => m.id === id);
+      if (!mat) return;
+
+      if (campo === 'nombre') {
+        mat.nombre = valor.trim() || mat.nombre;
+      } else if (campo === 'und') {
+        mat.und = valor.trim().toUpperCase() || 'UND';
+      } else if (campo === 'cant') {
+        const valNum = parseFloat(valor);
+        mat.cant = (!isNaN(valNum) && valNum >= 0) ? valNum : mat.cant;
+      } else if (campo === 'precio') {
+        const valNum = parseFloat(valor);
+        mat.precio = (!isNaN(valNum) && valNum >= 0) ? valNum : mat.precio;
+      }
+
+      saveState();
+      renderListaGestionMateriales();
+    };
+
+    window.eliminarMaterialCatalogo = function(id) {
+      const mat = materiales.find(m => m.id === id);
+      if (!mat) return;
+      mostrarConfirmacion(`¿Deseas eliminar el material "${mat.nombre}" del presupuesto?`, () => {
+        materiales = materiales.filter(m => m.id !== id);
+        saveState();
+        renderListaGestionMateriales();
+      }, "Eliminar Material");
+    };
+
+    window.guardarNuevoMaterial = function() {
+      const cat = document.getElementById('new-mat-cat').value;
+      const nombre = document.getElementById('new-mat-nombre').value.trim();
+      const und = document.getElementById('new-mat-und').value.trim().toUpperCase() || 'UND';
+      const cant = parseFloat(document.getElementById('new-mat-cant').value) || 0;
+      const precio = parseFloat(document.getElementById('new-mat-precio').value) || 0;
+
+      if (!nombre || cant <= 0) {
+        mostrarAviso("Ingresa un nombre y cantidad válida.");
+        return;
+      }
+
+      materiales.push({
+        id: Date.now(),
+        cat,
+        nombre: nombre,
+        und,
+        cant,
+        precio,
+        s1: 0,
+        s2: 0,
+        s3: 0
+      });
+
+      document.getElementById('new-mat-nombre').value = '';
+      document.getElementById('new-mat-cant').value = '1';
+      document.getElementById('new-mat-precio').value = '0';
+      saveState();
+      renderListaGestionMateriales();
+      mostrarAviso(`Material "${nombre}" añadido correctamente con cantidad ${cant} ${und} a S/ ${precio.toFixed(2)}.`, "Material Registrado");
+    };
+
+    // AL CARGAR EL DOCUMENTO
+    window.addEventListener('DOMContentLoaded', () => {
+      const inp = document.getElementById('input-fecha-inicio-obra');
+      if (inp) inp.value = fechaInicioObra;
+      const lbl = document.getElementById('label-dia-inicio-obra');
+      if (lbl) lbl.textContent = getDiaNombre(fechaInicioObra);
+      actualizarBotonesVistas();
+      renderAll();
+      aplicarPermisosRol();
+    });
+  </script>
+</body>
+</html>
